@@ -31,6 +31,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # vite는 타입을 검사하지 않으므로 먼저 확인한다.
+      - run: pnpm typecheck
       - run: pnpm exec vite build --base=/AboutMovie/
       # 직접 주소로 들어와도 앱이 열리도록 합니다.
       - run: cp dist/index.html dist/404.html
