@@ -1,0 +1,22 @@
+[build]
+  # version.txt는 배포 후 검사(live-check.yml)가 방금 올린 커밋이 배포되었는지 확인하는 데 씁니다.
+  command = "pnpm build && printf '%s' \"$COMMIT_REF\" > dist/version.txt"
+  publish = "dist"
+
+# 없는 빌드 파일은 앱 화면이 아니라 404로 응답해, 배포 후 검사가 누락을 잡을 수 있게 합니다.
+[[redirects]]
+  from = "/assets/*"
+  to = "/404.html"
+  status = 404
+
+# 직접 주소로 들어와도 앱이 200으로 열리게 합니다. 실제 파일이 있으면 그 파일이 우선합니다.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# 빌드 파일은 이름에 해시가 있어 내용이 바뀌면 주소도 바뀝니다.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

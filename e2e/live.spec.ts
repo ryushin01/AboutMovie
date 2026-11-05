@@ -1,11 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-// 배포된 사이트를 검사합니다. `pnpm test:live`로 실행하며, 배포 워크플로가 배포 후에 실행합니다.
+// 배포된 사이트를 검사합니다. `pnpm test:live`로 실행하며, 배포 후 Live check 워크플로가 실행합니다.
 test.skip(!process.env.LIVE, 'LIVE=1일 때만 실행합니다.');
 
-// 배포 워크플로는 방금 배포한 주소를 LIVE_URL로 넘깁니다.
-const SITE = (process.env.LIVE_URL ?? 'https://ryushin01.github.io/AboutMovie').replace(/\/$/, '');
+// 다른 주소를 검사하려면 LIVE_URL로 넘깁니다.
+const SITE = (process.env.LIVE_URL ?? 'https://about-movie-ryushin.netlify.app').replace(/\/$/, '');
 const png = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAEBgIApD5fRAAAAABJRU5ErkJggg==',
   'base64',
@@ -16,14 +16,10 @@ test('배포된 사이트에서 전체 흐름이 동작한다', async ({ page })
   test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  // 직접 주소는 GitHub Pages가 404.html로 처리하므로 그 응답 기록은 제외합니다.
   // 2152398850은 Firefox의 NS_BINDING_ABORTED로, 페이지를 옮기며 받던 글꼴을 취소했다는 기록입니다.
   // 파일이 실제로 없으면 아래 응답 검사가 잡습니다.
   page.on('console', (message) => {
-    if (
-      message.type() === 'error' &&
-      !/404|Failed to load resource|downloadable font:.*status=2152398850/.test(message.text())
-    ) {
+    if (message.type() === 'error' && !/downloadable font:.*status=2152398850/.test(message.text())) {
       errors.push(message.text());
     }
   });
