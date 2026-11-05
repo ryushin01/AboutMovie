@@ -1,6 +1,7 @@
 import { css } from '@emotion/react';
 import { useEffect, useRef } from 'react';
-import { Link, Outlet, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { useSyncReviewsAcrossTabs } from '@/entities/review';
 import { ThemeToggle } from '@/features/toggle-theme';
 import { routes } from '@/shared/config/routes';
 import { buttonCss } from '@/shared/ui/Button';
@@ -45,8 +46,9 @@ const mainCss = css`
   padding-inline: ${gutter};
   padding-bottom: 96px;
 
-  &:focus {
-    outline: none;
+  /* 키보드 사용자에게만 표시되며, 화면 가장자리에서 잘리지 않게 안쪽에 그립니다. */
+  &:focus-visible {
+    outline-offset: -3px;
   }
 `;
 const footerCss = css`
@@ -56,6 +58,7 @@ const footerCss = css`
 `;
 
 export function SiteLayout() {
+  useSyncReviewsAcrossTabs();
   const { pathname } = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(pathname);
@@ -77,9 +80,9 @@ export function SiteLayout() {
           AboutMovie
         </Link>
         <nav aria-label="주요 메뉴" css={navCss}>
-          <Link to={routes.newReview} css={buttonCss()}>
+          <NavLink to={routes.newReview} css={buttonCss()}>
             리뷰 쓰기
-          </Link>
+          </NavLink>
           <ThemeToggle />
         </nav>
       </header>
@@ -87,7 +90,7 @@ export function SiteLayout() {
         <Outlet />
       </main>
       <footer css={footerCss}>
-        <small>AboutMovie · 리뷰는 이 브라우저에 저장됩니다.</small>
+        <small>AboutMovie · 포트폴리오용 데모입니다. 리뷰는 이 브라우저에만 저장됩니다.</small>
       </footer>
     </>
   );

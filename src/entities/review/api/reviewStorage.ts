@@ -1,4 +1,5 @@
 import { createStore, del, entries, get, set, setMany } from 'idb-keyval';
+import { createId } from '@/shared/lib/createId';
 import { seedReviews } from '../model/seed';
 import type { Review, ReviewInput } from '../model/types';
 
@@ -32,7 +33,7 @@ export async function saveReview(input: ReviewInput): Promise<Review> {
   const existing = input.id ? await get<Review>(input.id, store) : undefined;
   const review: Review = {
     ...input,
-    id: input.id ?? crypto.randomUUID(),
+    id: input.id ?? createId(),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

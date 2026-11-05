@@ -25,7 +25,8 @@ const frameCss = css`
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    /* 2:3 틀은 유지하되, 비율이 다른 포스터도 잘리지 않게 보여 줍니다. */
+    object-fit: contain;
     transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 `;

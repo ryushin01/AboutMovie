@@ -13,7 +13,7 @@ export function ReviewEditPage() {
   const { data: review, isPending, isError } = useReview(id);
   useDocumentTitle(review ? `${review.title} 수정` : review === null ? '리뷰를 찾을 수 없습니다' : undefined);
 
-  if (isPending) return <p role="status">리뷰를 불러오는 중입니다.</p>;
+  if (isPending) return <output css={{ display: 'block' }}>리뷰를 불러오는 중입니다.</output>;
   if (isError) return <p role="alert">리뷰를 불러오지 못했습니다. 새로고침해 주세요.</p>;
   if (!review) {
     return (

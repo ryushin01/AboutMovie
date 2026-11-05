@@ -79,7 +79,7 @@ export function HomePage() {
         </p>
       </section>
 
-      {isPending && <p role="status">리뷰를 불러오는 중입니다.</p>}
+      {isPending && <output css={{ display: 'block' }}>리뷰를 불러오는 중입니다.</output>}
       {isError && <p role="alert">리뷰를 불러오지 못했습니다. 새로고침해 주세요.</p>}
       {reviews?.length === 0 && (
         <section css={{ borderTop: '4px solid var(--ink)', marginTop: 16 }}>
@@ -101,4 +101,3 @@ export function HomePage() {
     </>
   );
 }
-

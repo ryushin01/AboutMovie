@@ -31,6 +31,18 @@ export const toDraft = (review?: Review): Draft => ({
   scenes: review?.scenes ?? [],
 });
 
+export const isDraftChanged = (before: Draft, after: Draft) =>
+  before.title !== after.title ||
+  before.year !== after.year ||
+  before.rating !== after.rating ||
+  before.poster !== after.poster ||
+  before.body !== after.body ||
+  before.scenes.length !== after.scenes.length ||
+  before.scenes.some((scene, index) => {
+    const other = after.scenes[index];
+    return scene.id !== other.id || scene.description !== other.description;
+  });
+
 export function validateDraft(draft: Draft): DraftErrors {
   const errors: DraftErrors = {};
   const maxYear = new Date().getFullYear() + 5;
