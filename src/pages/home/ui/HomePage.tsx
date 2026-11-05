@@ -1,9 +1,11 @@
 import { css } from '@emotion/react';
 import { Link } from 'react-router';
 import { ReviewCard, useReviews } from '@/entities/review';
+import { RestoreSamplesButton } from '@/features/restore-samples';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
 import { buttonCss } from '@/shared/ui/Button';
+import { cardLayout, type CardSlot } from '../lib/cardLayout';
 
 const heroCss = css`
   padding-block: clamp(32px, 6vw, 96px) clamp(32px, 5vw, 72px);
@@ -39,35 +41,25 @@ const gridCss = css`
   padding: clamp(32px, 4vw, 56px) 0 0;
   list-style: none;
   border-top: 4px solid var(--ink);
+`;
 
-  /* 큰 카드와 작은 카드를 번갈아 놓아 잡지처럼 보이게 합니다. */
-  li {
-    grid-column: span 3;
-  }
-  li:nth-of-type(5n + 1) {
-    grid-column: span 6;
-  }
-  li:nth-of-type(5n + 2) {
-    grid-column: span 3;
-    margin-top: clamp(0px, 8vw, 140px);
-  }
+const slotCss = ({ span, offset }: CardSlot) => css`
+  grid-column: span ${span};
+  margin-top: ${offset ? 'clamp(0px, 8vw, 140px)' : 0};
 
   @media (max-width: 800px) {
-    li,
-    li:nth-of-type(5n + 1),
-    li:nth-of-type(5n + 2) {
-      grid-column: span 6;
-      margin-top: 0;
-    }
-    li:nth-of-type(5n + 1) {
-      grid-column: span 12;
-    }
+    grid-column: span ${span === 6 ? 12 : 6};
+    margin-top: 0;
   }
+`;
+const restoreCss = css`
+  margin-top: clamp(48px, 6vw, 96px);
 `;
 
 export function HomePage() {
   useDocumentTitle();
   const { data: reviews, isPending, isError } = useReviews();
+  const slots = cardLayout(reviews?.length ?? 0);
 
   return (
     <>
@@ -91,12 +83,17 @@ export function HomePage() {
       )}
       {reviews && reviews.length > 0 && (
         <ul css={gridCss}>
-          {reviews.map((review) => (
-            <li key={review.id}>
+          {reviews.map((review, index) => (
+            <li key={review.id} css={slotCss(slots[index])}>
               <ReviewCard review={review} />
             </li>
           ))}
         </ul>
+      )}
+      {reviews && (
+        <div css={restoreCss}>
+          <RestoreSamplesButton />
+        </div>
       )}
     </>
   );
