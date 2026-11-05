@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:live": "LIVE=1 playwright test e2e/live.spec.ts",
     "screenshots": "SCREENSHOTS=1 playwright test e2e/screenshots.spec.ts --project=chromium",
     "demo-gif": "DEMO=1 playwright test e2e/demo.spec.ts --project=chromium"
   },

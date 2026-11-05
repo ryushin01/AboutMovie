@@ -11,9 +11,12 @@ export default defineConfig({
     { name: 'firefox', use: devices['Desktop Firefox'] },
     { name: 'webkit', use: devices['Desktop Safari'] },
   ],
-  webServer: {
-    command: `pnpm exec vite preview --port ${PORT} --strictPort`,
-    port: PORT,
-    reuseExistingServer: false,
-  },
+  // 배포된 사이트를 검사할 때는 로컬 서버가 필요 없습니다.
+  webServer: process.env.LIVE
+    ? undefined
+    : {
+        command: `pnpm exec vite preview --port ${PORT} --strictPort`,
+        port: PORT,
+        reuseExistingServer: false,
+      },
 });

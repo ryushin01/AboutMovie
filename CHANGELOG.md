@@ -10,6 +10,7 @@
 - README 시연 GIF와 생성 스크립트
 - Lighthouse 측정 결과 기록
 - 공유 이미지 (`og:image`)
+- GitHub Pages 배포와 배포 후 사이트 검사 (`pnpm test:live`)
 
 ### 수정
 
