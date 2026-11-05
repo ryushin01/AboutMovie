@@ -5,6 +5,8 @@
 
 영화 포스터와 장면 이미지를 곁들여 리뷰를 쓰는 영화 리뷰 블로그입니다. 서버 없이 브라우저만으로 작성부터 저장까지 동작합니다.
 
+**[데모 바로 보기](https://ryushin01.github.io/AboutMovie/)** · 가입 없이 바로 쓸 수 있고, 쓴 리뷰는 내 브라우저에만 저장됩니다.
+
 > **프로젝트 상태:** **포트폴리오용 데모**입니다. 리뷰와 이미지는 방문자의 브라우저(IndexedDB)에만 저장되어 다른 사람에게 공개되지 않고, 브라우저 데이터를 지우면 함께 사라집니다. 처음 보이는 영화와 리뷰는 모두 가상 데이터입니다.
 
 ## 화면
@@ -41,6 +43,7 @@
 | 상태·데이터 | TanStack Query v5, idb-keyval (IndexedDB) |
 | 스타일 | Emotion, Pretendard |
 | 품질 | oxlint, Prettier, Vitest + React Testing Library, Playwright + axe (Chromium, Firefox, WebKit E2E) |
+| 배포 | GitHub Pages, GitHub Actions |
 | 자동화 | GitHub Actions |
 
 ## 시작하기
