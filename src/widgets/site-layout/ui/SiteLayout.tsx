@@ -87,7 +87,7 @@ export function SiteLayout() {
         <Outlet />
       </main>
       <footer css={footerCss}>
-        <small>AboutMovie · 리뷰는 이 브라우저에 저장됩니다.</small>
+        <small>AboutMovie · 포트폴리오용 데모입니다. 리뷰는 이 브라우저에만 저장됩니다.</small>
       </footer>
     </>
   );

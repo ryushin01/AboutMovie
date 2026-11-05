@@ -3,7 +3,8 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { Link } from 'react-router';
 import { useSaveReview, type Review } from '@/entities/review';
-import { readImageFile } from '@/shared/lib/readImageFile';
+import { createId } from '@/shared/lib/createId';
+import { POSTER_MAX_EDGE, readImageFile, SCENE_MAX_EDGE } from '@/shared/lib/readImageFile';
 import { Button, buttonCss } from '@/shared/ui/Button';
 import { Field } from '@/shared/ui/Field';
 import { inputCss } from '@/shared/ui/styles';
@@ -94,7 +95,7 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
     if (!file) return;
     setReading((n) => n + 1);
     try {
-      const poster = await readImageFile(file);
+      const poster = await readImageFile(file, POSTER_MAX_EDGE);
       change({ poster });
       setErrors((prev) => ({ ...prev, poster: undefined }));
       setStatus('포스터 이미지를 넣었습니다.');
@@ -111,16 +112,19 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
     const files = Array.from(input.files ?? []);
     if (files.length === 0) return;
     setReading((n) => n + 1);
-    const results = await Promise.allSettled(files.map(readImageFile));
-    const added = results.flatMap((r) =>
-      r.status === 'fulfilled' ? [{ id: crypto.randomUUID(), src: r.value, description: '' }] : [],
-    );
-    const failed = results.flatMap((r) => (r.status === 'rejected' ? [(r.reason as Error).message] : []));
-    setDraft((prev) => ({ ...prev, scenes: [...prev.scenes, ...added] }));
-    setErrors((prev) => ({ ...prev, sceneFile: failed.join(' ') || undefined }));
-    if (added.length > 0) setStatus(`장면 이미지 ${added.length}개를 넣었습니다. 설명을 입력해 주세요.`);
-    input.value = '';
-    setReading((n) => n - 1);
+    try {
+      const results = await Promise.allSettled(files.map((file) => readImageFile(file, SCENE_MAX_EDGE)));
+      const added = results.flatMap((r) =>
+        r.status === 'fulfilled' ? [{ id: createId(), src: r.value, description: '' }] : [],
+      );
+      const failed = results.flatMap((r) => (r.status === 'rejected' ? [(r.reason as Error).message] : []));
+      setDraft((prev) => ({ ...prev, scenes: [...prev.scenes, ...added] }));
+      setErrors((prev) => ({ ...prev, sceneFile: failed.join(' ') || undefined }));
+      if (added.length > 0) setStatus(`장면 이미지 ${added.length}개를 넣었습니다. 설명을 입력해 주세요.`);
+    } finally {
+      input.value = '';
+      setReading((n) => n - 1);
+    }
   };
 
   const removeScene = (id: string, order: number) => {

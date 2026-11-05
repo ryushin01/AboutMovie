@@ -24,7 +24,7 @@ const scene = (from: string, to: string, horizon: number) =>
   <rect y="${horizon}" width="1600" height="${900 - horizon}" fill="#000" opacity=".45"/>
 </svg>`);
 
-const NOTE = '※ 샘플로 만든 가상의 영화 리뷰입니다. 직접 수정하거나 삭제할 수 있습니다.';
+const NOTE = '※ 포트폴리오 데모용으로 만든 가상의 영화 리뷰입니다. 직접 수정하거나 삭제해 볼 수 있습니다.';
 
 export const seedReviews: Review[] = [
   {

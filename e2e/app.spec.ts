@@ -145,3 +145,68 @@ test('긴 제목도 넘치지 않는다', async ({ browser }) => {
   await expectNoHorizontalOverflow(page);
   await context.close();
 });
+
+test('HTTPS가 아닌 주소에서도 장면 이미지와 함께 저장한다', async ({ page }) => {
+  // randomUUID는 보안 컨텍스트에서만 제공됩니다.
+  await page.addInitScript(() => {
+    delete (Crypto.prototype as Partial<Crypto>).randomUUID;
+  });
+  await page.goto('/reviews/new');
+  await fillRequired(page, '비보안 주소');
+  await page.getByLabel('영화 속 장면 이미지').setInputFiles(image('a.png'));
+  await page.getByLabel('장면 1 설명 (필수)').fill('장면', { timeout: 3000 });
+  await page.getByRole('button', { name: '저장' }).click({ timeout: 3000 });
+  await expect(page.getByRole('heading', { level: 1, name: '비보안 주소' })).toBeVisible({ timeout: 3000 });
+});
+
+test('큰 이미지를 줄여서 저장한다', async ({ page }) => {
+  await page.goto('/reviews/new');
+  const makePng = (width: number, height: number) =>
+    page.evaluate(
+      ([w, h]) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const context = canvas.getContext('2d')!;
+        const gradient = context.createLinearGradient(0, 0, w, h);
+        gradient.addColorStop(0, '#a82c0c');
+        gradient.addColorStop(1, '#15130f');
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, w, h);
+        return canvas.toDataURL('image/png').split(',')[1];
+      },
+      [width, height],
+    );
+  const file = (name: string, base64: string) => ({
+    name,
+    mimeType: 'image/png',
+    buffer: Buffer.from(base64, 'base64'),
+  });
+  const size = (alt: string) =>
+    page.getByAltText(alt).evaluate((img: HTMLImageElement) => ({
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+      type: img.src.slice(0, 15),
+    }));
+
+  await page.getByLabel('포스터 이미지 (필수)').setInputFiles(file('poster.png', await makePng(3000, 4500)));
+  await expect(page.getByAltText('선택한 포스터 미리보기')).toBeVisible();
+  expect(await size('선택한 포스터 미리보기')).toEqual({ width: 1000, height: 1500, type: 'data:image/jpeg' });
+
+  await page.getByLabel('영화 속 장면 이미지').setInputFiles(file('scene.png', await makePng(4000, 2250)));
+  await expect(page.getByAltText('장면 1 미리보기')).toBeVisible();
+  expect(await size('장면 1 미리보기')).toEqual({ width: 1920, height: 1080, type: 'data:image/jpeg' });
+});
+
+test('표시할 수 없는 이미지는 안내하고 다음 동작을 막지 않는다', async ({ page }) => {
+  await page.goto('/reviews/new');
+  const broken = { name: 'photo.heic', mimeType: 'image/heic', buffer: Buffer.from('not an image') };
+
+  await page.getByLabel('포스터 이미지 (필수)').setInputFiles(broken);
+  await expect(page.getByText('오류: photo.heic: 표시할 수 없는 이미지 형식입니다.', { exact: false })).toBeVisible();
+
+  await page.getByLabel('영화 속 장면 이미지').setInputFiles([broken, image('ok.png')]);
+  await expect(page.getByLabel('장면 1 설명 (필수)')).toBeVisible();
+  await expect(page.getByLabel('장면 2 설명 (필수)')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '저장' })).toBeEnabled();
+});

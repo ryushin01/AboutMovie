@@ -36,6 +36,9 @@ const styles = css`
     font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
     font-size: 1rem;
     line-height: 1.5;
+    /* 한글이 단어 중간에서 끊기지 않게 하되, 긴 문자열은 넘치지 않게 합니다. */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
   :focus-visible {
     outline: 3px solid var(--accent);
