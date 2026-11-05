@@ -34,8 +34,7 @@ const posterCss = css`
   img {
     display: block;
     width: 100%;
-    aspect-ratio: 2 / 3;
-    object-fit: cover;
+    height: auto;
   }
   @media (max-width: 800px) {
     max-width: 320px;
@@ -89,7 +88,8 @@ const galleryCss = css`
     display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
-    object-fit: cover;
+    /* 비율이 다른 장면도 잘리지 않게 보여 줍니다. */
+    object-fit: contain;
     background: var(--surface);
   }
 `;
@@ -103,7 +103,7 @@ export function ReviewDetailPage() {
   const { data: review, isPending, isError } = useReview(id);
   useDocumentTitle(review?.title ?? (review === null ? '리뷰를 찾을 수 없습니다' : undefined));
 
-  if (isPending) return <p role="status">리뷰를 불러오는 중입니다.</p>;
+  if (isPending) return <output css={{ display: 'block' }}>리뷰를 불러오는 중입니다.</output>;
   if (isError) return <p role="alert">리뷰를 불러오지 못했습니다. 새로고침해 주세요.</p>;
   if (!review) {
     return (
@@ -133,11 +133,7 @@ export function ReviewDetailPage() {
             <Link to={routes.editReview(review.id)} css={buttonCss()}>
               수정
             </Link>
-            <DeleteReviewButton
-              id={review.id}
-              title={review.title}
-              onDeleted={() => navigate(routes.home)}
-            />
+            <DeleteReviewButton id={review.id} title={review.title} onDeleted={() => navigate(routes.home)} />
           </div>
         </div>
       </div>

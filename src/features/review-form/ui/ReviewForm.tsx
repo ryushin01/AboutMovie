@@ -1,18 +1,30 @@
 import { css } from '@emotion/react';
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { flushSync } from 'react-dom';
-import { Link } from 'react-router';
-import { useSaveReview, type Review } from '@/entities/review';
-import { readImageFile } from '@/shared/lib/readImageFile';
+import { Link, useBlocker } from 'react-router';
+import { useSaveReview, type Review, type Scene } from '@/entities/review';
+import { createId } from '@/shared/lib/createId';
+import { POSTER_MAX_EDGE, readImageFile, SCENE_MAX_EDGE } from '@/shared/lib/readImageFile';
 import { Button, buttonCss } from '@/shared/ui/Button';
 import { Field } from '@/shared/ui/Field';
 import { inputCss } from '@/shared/ui/styles';
-import { toDraft, toReviewInput, validateDraft, type Draft, type DraftErrors } from '../model/draft';
+import {
+  isDraftChanged,
+  toDraft,
+  toReviewInput,
+  validateDraft,
+  type Draft,
+  type DraftErrors,
+} from '../model/draft';
 
 const formCss = css`
   display: grid;
   gap: 32px;
+  min-width: 0;
   max-width: 760px;
+  margin: 0;
+  padding: 0;
+  border: 0;
 `;
 const rowCss = css`
   display: grid;
@@ -24,7 +36,8 @@ const previewCss = css`
   width: 160px;
   aspect-ratio: 2 / 3;
   margin-top: 12px;
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--surface);
 `;
 const scenesCss = css`
   display: grid;
@@ -45,7 +58,8 @@ const scenesCss = css`
     display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
-    object-fit: cover;
+    object-fit: contain;
+    background: var(--surface);
   }
   button {
     margin-top: 12px;
@@ -77,7 +91,8 @@ interface Props {
 }
 
 export function ReviewForm({ review, cancelTo, onSaved }: Props) {
-  const [draft, setDraft] = useState<Draft>(() => toDraft(review));
+  const [initialDraft] = useState<Draft>(() => toDraft(review));
+  const [draft, setDraft] = useState<Draft>(initialDraft);
   const [errors, setErrors] = useState<DraftErrors>({});
   const [reading, setReading] = useState(0);
   const [status, setStatus] = useState('');
@@ -85,6 +100,35 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
   const submitLock = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const sceneInputRef = useRef<HTMLInputElement>(null);
+  const alertRef = useRef<HTMLParagraphElement>(null);
+
+  // 저장 중 잠겼던 버튼에서 초점을 잃으므로 실패 안내로 옮깁니다.
+  useEffect(() => {
+    if (save.isError) alertRef.current?.focus();
+  }, [save.isError]);
+
+  const saved = useRef(false);
+  const changed = isDraftChanged(initialDraft, draft);
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      changed && !saved.current && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    if (window.confirm('작성 중인 내용이 사라집니다. 이 화면을 나갈까요?')) blocker.proceed();
+    else blocker.reset();
+  }, [blocker]);
+
+  // 새로고침이나 탭 닫기는 라우터가 막을 수 없어 브라우저 경고를 씁니다.
+  useEffect(() => {
+    if (!changed) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!saved.current) event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [changed]);
 
   const change = (patch: Partial<Draft>) => setDraft((prev) => ({ ...prev, ...patch }));
 
@@ -94,7 +138,7 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
     if (!file) return;
     setReading((n) => n + 1);
     try {
-      const poster = await readImageFile(file);
+      const poster = await readImageFile(file, POSTER_MAX_EDGE);
       change({ poster });
       setErrors((prev) => ({ ...prev, poster: undefined }));
       setStatus('포스터 이미지를 넣었습니다.');
@@ -111,16 +155,24 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
     const files = Array.from(input.files ?? []);
     if (files.length === 0) return;
     setReading((n) => n + 1);
-    const results = await Promise.allSettled(files.map(readImageFile));
-    const added = results.flatMap((r) =>
-      r.status === 'fulfilled' ? [{ id: crypto.randomUUID(), src: r.value, description: '' }] : [],
-    );
-    const failed = results.flatMap((r) => (r.status === 'rejected' ? [(r.reason as Error).message] : []));
-    setDraft((prev) => ({ ...prev, scenes: [...prev.scenes, ...added] }));
-    setErrors((prev) => ({ ...prev, sceneFile: failed.join(' ') || undefined }));
-    if (added.length > 0) setStatus(`장면 이미지 ${added.length}개를 넣었습니다. 설명을 입력해 주세요.`);
-    input.value = '';
-    setReading((n) => n - 1);
+    try {
+      // 큰 이미지를 한꺼번에 디코딩하면 메모리가 부족할 수 있어 한 장씩 처리합니다.
+      const added: Scene[] = [];
+      const failed: string[] = [];
+      for (const file of files) {
+        try {
+          added.push({ id: createId(), src: await readImageFile(file, SCENE_MAX_EDGE), description: '' });
+        } catch (error) {
+          failed.push((error as Error).message);
+        }
+      }
+      setDraft((prev) => ({ ...prev, scenes: [...prev.scenes, ...added] }));
+      setErrors((prev) => ({ ...prev, sceneFile: failed.join(' ') || undefined }));
+      if (added.length > 0) setStatus(`장면 이미지 ${added.length}개를 넣었습니다. 설명을 입력해 주세요.`);
+    } finally {
+      input.value = '';
+      setReading((n) => n - 1);
+    }
   };
 
   const removeScene = (id: string, order: number) => {
@@ -143,7 +195,10 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
 
     submitLock.current = true;
     save.mutate(toReviewInput(draft, review?.id), {
-      onSuccess: (saved) => onSaved(saved.id),
+      onSuccess: (result) => {
+        saved.current = true;
+        onSaved(result.id);
+      },
       onSettled: () => {
         submitLock.current = false;
       },
@@ -151,144 +206,145 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
   };
 
   return (
-    <form ref={formRef} css={formCss} onSubmit={handleSubmit} noValidate>
-      <Field label="영화 제목" required error={errors.title}>
-        {(control) => (
-          <input
-            {...control}
-            css={inputCss}
-            maxLength={100}
-            value={draft.title}
-            onChange={(e) => change({ title: e.target.value })}
-          />
-        )}
-      </Field>
-
-      <div css={rowCss}>
-        <Field label="개봉 연도" required hint="예: 2024" error={errors.year}>
+    <form ref={formRef} onSubmit={handleSubmit} noValidate>
+      {/* 저장 중에 고친 내용이 사라지지 않도록 입력을 잠급니다. */}
+      <fieldset disabled={save.isPending} css={formCss}>
+        <Field label="영화 제목" required error={errors.title}>
           {(control) => (
             <input
               {...control}
               css={inputCss}
-              inputMode="numeric"
-              value={draft.year}
-              onChange={(e) => change({ year: e.target.value })}
+              maxLength={100}
+              value={draft.title}
+              onChange={(e) => change({ title: e.target.value })}
             />
           )}
         </Field>
-        <Field label="평점" required error={errors.rating}>
+
+        <div css={rowCss}>
+          <Field label="개봉 연도" required hint="예: 2024" error={errors.year}>
+            {(control) => (
+              <input
+                {...control}
+                css={inputCss}
+                inputMode="numeric"
+                value={draft.year}
+                onChange={(e) => change({ year: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field label="평점" required error={errors.rating}>
+            {(control) => (
+              <select
+                {...control}
+                css={inputCss}
+                value={draft.rating}
+                onChange={(e) => change({ rating: e.target.value })}
+              >
+                <option value="">선택해 주세요</option>
+                {[5, 4, 3, 2, 1].map((score) => (
+                  <option key={score} value={score}>
+                    {score}점
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        </div>
+
+        <Field label="포스터 이미지" required hint="10MB 이하의 이미지 파일" error={errors.poster}>
           {(control) => (
-            <select
+            <>
+              <input {...control} css={inputCss} type="file" accept="image/*" onChange={handlePoster} />
+              {draft.poster && <img css={previewCss} src={draft.poster} alt="선택한 포스터 미리보기" />}
+            </>
+          )}
+        </Field>
+
+        <Field label="리뷰 내용" required error={errors.body}>
+          {(control) => (
+            <textarea
               {...control}
-              css={inputCss}
-              value={draft.rating}
-              onChange={(e) => change({ rating: e.target.value })}
-            >
-              <option value="">선택해 주세요</option>
-              {[5, 4, 3, 2, 1].map((score) => (
-                <option key={score} value={score}>
-                  {score}점
-                </option>
+              css={[inputCss, { minHeight: 280, resize: 'vertical', lineHeight: 1.7 }]}
+              value={draft.body}
+              onChange={(e) => change({ body: e.target.value })}
+            />
+          )}
+        </Field>
+
+        <div>
+          <Field
+            label="영화 속 장면 이미지"
+            hint="여러 장을 함께 고를 수 있습니다. 10MB 이하의 이미지 파일"
+            error={errors.sceneFile}
+          >
+            {(control) => (
+              <input
+                {...control}
+                ref={sceneInputRef}
+                css={inputCss}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleScenes}
+              />
+            )}
+          </Field>
+
+          {draft.scenes.length > 0 && (
+            <ul css={scenesCss}>
+              {draft.scenes.map((scene, index) => (
+                <li key={scene.id}>
+                  <img src={scene.src} alt={scene.description || `장면 ${index + 1} 미리보기`} />
+                  <div>
+                    <Field
+                      label={`장면 ${index + 1} 설명`}
+                      required
+                      hint="이미지를 볼 수 없는 사람을 위한 대체 텍스트로 쓰입니다."
+                      error={errors.scenes?.[scene.id]}
+                    >
+                      {(control) => (
+                        <input
+                          {...control}
+                          css={inputCss}
+                          value={scene.description}
+                          onChange={(e) =>
+                            change({
+                              scenes: draft.scenes.map((s) =>
+                                s.id === scene.id ? { ...s, description: e.target.value } : s,
+                              ),
+                            })
+                          }
+                        />
+                      )}
+                    </Field>
+                    <Button variant="outline" onClick={() => removeScene(scene.id, index + 1)}>
+                      장면 {index + 1} 삭제
+                    </Button>
+                  </div>
+                </li>
               ))}
-            </select>
+            </ul>
           )}
-        </Field>
-      </div>
+        </div>
 
-      <Field label="포스터 이미지" required hint="10MB 이하의 이미지 파일" error={errors.poster}>
-        {(control) => (
-          <>
-            <input {...control} css={inputCss} type="file" accept="image/*" onChange={handlePoster} />
-            {draft.poster && <img css={previewCss} src={draft.poster} alt="선택한 포스터 미리보기" />}
-          </>
+        <output css={{ display: 'block', color: 'var(--muted)' }}>{status}</output>
+
+        {save.isError && (
+          <p ref={alertRef} role="alert" tabIndex={-1} css={alertCss}>
+            저장하지 못했습니다. 저장 공간이 부족하면 이미지를 줄여 다시 시도해 주세요.
+          </p>
         )}
-      </Field>
 
-      <Field label="리뷰 내용" required error={errors.body}>
-        {(control) => (
-          <textarea
-            {...control}
-            css={[inputCss, { minHeight: 280, resize: 'vertical', lineHeight: 1.7 }]}
-            value={draft.body}
-            onChange={(e) => change({ body: e.target.value })}
-          />
-        )}
-      </Field>
-
-      <div>
-        <Field
-          label="영화 속 장면 이미지"
-          hint="여러 장을 함께 고를 수 있습니다. 10MB 이하의 이미지 파일"
-          error={errors.sceneFile}
-        >
-          {(control) => (
-            <input
-              {...control}
-              ref={sceneInputRef}
-              css={inputCss}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleScenes}
-            />
-          )}
-        </Field>
-
-        {draft.scenes.length > 0 && (
-          <ul css={scenesCss}>
-            {draft.scenes.map((scene, index) => (
-              <li key={scene.id}>
-                <img src={scene.src} alt={scene.description || `장면 ${index + 1} 미리보기`} />
-                <div>
-                  <Field
-                    label={`장면 ${index + 1} 설명`}
-                    required
-                    hint="이미지를 볼 수 없는 사람을 위한 대체 텍스트로 쓰입니다."
-                    error={errors.scenes?.[scene.id]}
-                  >
-                    {(control) => (
-                      <input
-                        {...control}
-                        css={inputCss}
-                        value={scene.description}
-                        onChange={(e) =>
-                          change({
-                            scenes: draft.scenes.map((s) =>
-                              s.id === scene.id ? { ...s, description: e.target.value } : s,
-                            ),
-                          })
-                        }
-                      />
-                    )}
-                  </Field>
-                  <Button variant="outline" onClick={() => removeScene(scene.id, index + 1)}>
-                    장면 {index + 1} 삭제
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <p role="status" css={{ margin: 0, color: 'var(--muted)' }}>
-        {status}
-      </p>
-
-      {save.isError && (
-        <p role="alert" css={alertCss}>
-          저장하지 못했습니다. 저장 공간이 부족하면 이미지를 줄여 다시 시도해 주세요.
-        </p>
-      )}
-
-      <div css={actionsCss}>
-        <Button type="submit" disabled={save.isPending || reading > 0}>
-          {save.isPending ? '저장 중…' : '저장'}
-        </Button>
-        <Link to={cancelTo} css={buttonCss('outline')}>
-          취소
-        </Link>
-      </div>
+        <div css={actionsCss}>
+          <Button type="submit" disabled={save.isPending || reading > 0}>
+            {save.isPending ? '저장 중…' : '저장'}
+          </Button>
+          <Link to={cancelTo} css={buttonCss('outline')}>
+            취소
+          </Link>
+        </div>
+      </fieldset>
     </form>
   );
 }

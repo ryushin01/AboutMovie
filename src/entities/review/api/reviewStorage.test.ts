@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { deleteReview, getReview, listReviews, saveReview } from './reviewStorage';
 
-const input = { title: '새 영화', year: 2026, rating: 4, poster: 'data:image/png;base64,AA', scenes: [], body: '본문' };
+const input = {
+  title: '새 영화',
+  year: 2026,
+  rating: 4,
+  poster: 'data:image/png;base64,AA',
+  scenes: [],
+  body: '본문',
+};
 
 describe('reviewStorage', () => {
   it('처음 읽으면 샘플을 넣고, 전부 지운 뒤에는 다시 넣지 않는다', async () => {
