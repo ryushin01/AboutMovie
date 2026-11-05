@@ -1,14 +1,21 @@
 import { css } from '@emotion/react';
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { flushSync } from 'react-dom';
-import { Link } from 'react-router';
+import { Link, useBlocker } from 'react-router';
 import { useSaveReview, type Review } from '@/entities/review';
 import { createId } from '@/shared/lib/createId';
 import { POSTER_MAX_EDGE, readImageFile, SCENE_MAX_EDGE } from '@/shared/lib/readImageFile';
 import { Button, buttonCss } from '@/shared/ui/Button';
 import { Field } from '@/shared/ui/Field';
 import { inputCss } from '@/shared/ui/styles';
-import { toDraft, toReviewInput, validateDraft, type Draft, type DraftErrors } from '../model/draft';
+import {
+  isDraftChanged,
+  toDraft,
+  toReviewInput,
+  validateDraft,
+  type Draft,
+  type DraftErrors,
+} from '../model/draft';
 
 const formCss = css`
   display: grid;
@@ -25,7 +32,8 @@ const previewCss = css`
   width: 160px;
   aspect-ratio: 2 / 3;
   margin-top: 12px;
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--surface);
 `;
 const scenesCss = css`
   display: grid;
@@ -46,7 +54,8 @@ const scenesCss = css`
     display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
-    object-fit: cover;
+    object-fit: contain;
+    background: var(--surface);
   }
   button {
     margin-top: 12px;
@@ -78,7 +87,8 @@ interface Props {
 }
 
 export function ReviewForm({ review, cancelTo, onSaved }: Props) {
-  const [draft, setDraft] = useState<Draft>(() => toDraft(review));
+  const [initialDraft] = useState<Draft>(() => toDraft(review));
+  const [draft, setDraft] = useState<Draft>(initialDraft);
   const [errors, setErrors] = useState<DraftErrors>({});
   const [reading, setReading] = useState(0);
   const [status, setStatus] = useState('');
@@ -86,6 +96,29 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
   const submitLock = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const sceneInputRef = useRef<HTMLInputElement>(null);
+
+  const saved = useRef(false);
+  const changed = isDraftChanged(initialDraft, draft);
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      changed && !saved.current && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    if (window.confirm('작성 중인 내용이 사라집니다. 이 화면을 나갈까요?')) blocker.proceed();
+    else blocker.reset();
+  }, [blocker]);
+
+  // 새로고침이나 탭 닫기는 라우터가 막을 수 없어 브라우저 경고를 씁니다.
+  useEffect(() => {
+    if (!changed) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!saved.current) event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [changed]);
 
   const change = (patch: Partial<Draft>) => setDraft((prev) => ({ ...prev, ...patch }));
 
@@ -147,7 +180,10 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
 
     submitLock.current = true;
     save.mutate(toReviewInput(draft, review?.id), {
-      onSuccess: (saved) => onSaved(saved.id),
+      onSuccess: (result) => {
+        saved.current = true;
+        onSaved(result.id);
+      },
       onSettled: () => {
         submitLock.current = false;
       },
@@ -275,9 +311,7 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
         )}
       </div>
 
-      <p role="status" css={{ margin: 0, color: 'var(--muted)' }}>
-        {status}
-      </p>
+      <output css={{ display: 'block', color: 'var(--muted)' }}>{status}</output>
 
       {save.isError && (
         <p role="alert" css={alertCss}>

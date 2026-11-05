@@ -1,6 +1,7 @@
 import { css } from '@emotion/react';
 import { useEffect, useRef } from 'react';
-import { Link, Outlet, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { useSyncReviewsAcrossTabs } from '@/entities/review';
 import { ThemeToggle } from '@/features/toggle-theme';
 import { routes } from '@/shared/config/routes';
 import { buttonCss } from '@/shared/ui/Button';
@@ -56,6 +57,7 @@ const footerCss = css`
 `;
 
 export function SiteLayout() {
+  useSyncReviewsAcrossTabs();
   const { pathname } = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(pathname);
@@ -77,9 +79,9 @@ export function SiteLayout() {
           AboutMovie
         </Link>
         <nav aria-label="주요 메뉴" css={navCss}>
-          <Link to={routes.newReview} css={buttonCss()}>
+          <NavLink to={routes.newReview} css={buttonCss()}>
             리뷰 쓰기
-          </Link>
+          </NavLink>
           <ThemeToggle />
         </nav>
       </header>

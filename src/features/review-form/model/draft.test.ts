@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toDraft, toReviewInput, validateDraft } from './draft';
+import { isDraftChanged, toDraft, toReviewInput, validateDraft } from './draft';
 
 const valid = { ...toDraft(), title: ' 영화 ', year: '2024', rating: '4', poster: 'data:x', body: '본문' };
 
@@ -24,4 +24,19 @@ describe('validateDraft', () => {
 
 it('toReviewInput은 숫자로 바꾸고 공백을 정리한다', () => {
   expect(toReviewInput(valid)).toMatchObject({ title: '영화', year: 2024, rating: 4 });
+});
+
+describe('isDraftChanged', () => {
+  const scene = { id: 'a', src: 'data:x', description: '설명' };
+  const base = { ...valid, scenes: [scene] };
+
+  it('같으면 false', () => {
+    expect(isDraftChanged(base, { ...base, scenes: [{ ...scene }] })).toBe(false);
+  });
+
+  it('입력이나 장면이 바뀌면 true', () => {
+    expect(isDraftChanged(base, { ...base, body: '새 본문' })).toBe(true);
+    expect(isDraftChanged(base, { ...base, scenes: [] })).toBe(true);
+    expect(isDraftChanged(base, { ...base, scenes: [{ ...scene, description: '다름' }] })).toBe(true);
+  });
 });

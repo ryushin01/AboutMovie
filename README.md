@@ -1,6 +1,7 @@
 # AboutMovie
 
-![version](https://img.shields.io/badge/version-0.2.0-a82c0c)
+[![CI](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml)
+![version](https://img.shields.io/badge/version-0.3.0-a82c0c)
 ![Storybook](https://img.shields.io/badge/Storybook-10-FF4785?logo=storybook&logoColor=white)
 
 영화 포스터와 장면 이미지를 곁들여 리뷰를 쓰는 영화 리뷰 블로그입니다. 서버 없이 브라우저만으로 작성부터 저장까지 동작합니다.
@@ -25,6 +26,7 @@
 - 포스터 이미지와 영화 속 장면 이미지 업로드 (장당 10MB 이하, 장면은 여러 장)
 - 큰 이미지 자동 축소, 브라우저가 표시할 수 없는 형식은 안내 후 거부
 - 장면 설명을 이미지의 대체 텍스트로 사용
+- 작성 중 나가기 전 확인, 다른 탭의 변경 바로 반영
 - 다크 모드 (처음에는 시스템 설정을 따르고, 고른 값을 기억)
 - 처음 방문하면 가상 샘플 리뷰 3편을 표시 (삭제하면 다시 생기지 않음)
 
@@ -37,7 +39,8 @@
 | 프레임워크 | React 19, Vite 8, TypeScript 7, React Router 8 |
 | 상태·데이터 | TanStack Query v5, idb-keyval (IndexedDB) |
 | 스타일 | Emotion, Pretendard |
-| 품질 | Vitest + React Testing Library, Playwright + axe (E2E), Storybook 10 |
+| 품질 | oxlint, Prettier, Vitest + React Testing Library, Playwright + axe (E2E), Storybook 10 |
+| 자동화 | GitHub Actions |
 
 ## 시작하기
 
@@ -52,7 +55,7 @@ pnpm dev    # http://localhost:5173
 | 명령 | 설명 |
 |---|---|
 | `pnpm build` | 타입 검사와 프로덕션 빌드 |
-| `pnpm typecheck` | 타입 검사 |
+| `pnpm typecheck` / `lint` / `format` | 타입 검사 / 린트(접근성, FSD 계층 포함) / 코드 정리 |
 | `pnpm test` | 단위·컴포넌트 테스트 |
 | `pnpm test:e2e` | 프로덕션 빌드와 모든 스토리의 흐름·넘침·접근성 검사 (먼저 `build`, `build-storybook` 필요) |
 | `pnpm screenshots` | README 스크린샷 다시 만들기 (먼저 `build`, `build-storybook` 필요) |
@@ -63,8 +66,9 @@ pnpm dev    # http://localhost:5173
 [Feature-Sliced Design](https://feature-sliced.design)을 따릅니다. 컴포넌트 옆에 `*.stories.tsx`와 `*.test.tsx`를 둡니다.
 
 ```
+.github/            CI
 .storybook/         Storybook 설정
-docs/               개발 가이드, README 스크린샷
+docs/               개발 가이드, 접근성 점검, README 스크린샷
 e2e/                E2E 테스트
 src/
 ├─ app/             진입점, 라우터, 전역 스타일과 테마 색상
@@ -79,11 +83,11 @@ src/
 
 | 문서 | 내용 |
 |---|---|
-| [개발 가이드](docs/development.md) | 구현 판단, 테스트 구성, 접근성 점검 범위, 배포 시 유의점 |
+| [개발 가이드](docs/development.md) | 구현 판단, 테스트 구성, 배포 시 유의점, 알려진 제한 |
+| [접근성 점검](docs/accessibility.md) | KWCAG 2.2 항목별 자체 점검 결과 |
 | [변경 기록](CHANGELOG.md) | 버전별 변경 내용 |
 
 ## 향후 과제
 
-- 데모 사이트 배포
-- ESLint, Prettier, CI 구성
-- KWCAG 항목별 수동 점검과 스크린 리더 확인
+- 데모 사이트 배포와 공유 이미지(`og:image`) 추가
+- 스크린 리더 직접 확인

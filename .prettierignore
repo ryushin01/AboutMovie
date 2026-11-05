@@ -1,0 +1,8 @@
+dist
+storybook-static
+test-results
+playwright-report
+pnpm-lock.yaml
+pnpm-workspace.yaml
+*.md
+docs/images

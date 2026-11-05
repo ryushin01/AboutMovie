@@ -14,7 +14,7 @@ for (const theme of ['light', 'dark']) {
     for (const id of ids) {
       await page.goto(`${base}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`);
       await page.locator('#storybook-root > *').first().waitFor();
-      await page.waitForFunction(() => !document.querySelector('[role="status"]:not(:empty)'));
+      await page.waitForFunction(() => !document.querySelector('output:not(:empty)'));
       if (await page.locator('body.sb-show-errordisplay').count()) failures.push(`${id}: 렌더링 오류`);
 
       const { violations } = await new AxeBuilder({ page })

@@ -17,7 +17,10 @@ describe('ReviewEditPage', () => {
     renderAt('/reviews/sample-last-screening/edit');
     expect(await screen.findByLabelText('영화 제목 (필수)')).toHaveValue('마지막 상영');
     expect(screen.getByLabelText('평점 (필수)')).toHaveValue('5');
-    expect(screen.getByRole('link', { name: '취소' })).toHaveAttribute('href', '/reviews/sample-last-screening');
+    expect(screen.getByRole('link', { name: '취소' })).toHaveAttribute(
+      'href',
+      '/reviews/sample-last-screening',
+    );
   });
 
   it('없는 리뷰를 안내한다', async () => {
