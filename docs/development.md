@@ -27,6 +27,7 @@
 | E2E | `e2e/app.spec.ts` | 프로덕션 빌드의 작성·수정·삭제, 중복 제출, 이탈 확인, 탭 동기화, 이미지 축소, 테마, 키보드, 컨트롤 크기, 폭 320·1440·2200px의 넘침과 axe 검사(목록, 상세, 작성, 수정, 없는 주소) |
 
 ```bash
+pnpm exec playwright install chromium  # 처음 한 번
 pnpm build
 pnpm test:e2e
 ```
