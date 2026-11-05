@@ -47,7 +47,8 @@ export async function readImageFile(file: File, maxEdge: number): Promise<string
 
     const { width, height } = fitWithin(image.naturalWidth, image.naturalHeight, maxEdge);
     const fits = width === image.naturalWidth && file.size <= KEEP_ORIGINAL_BYTES;
-    if (fits && file.type !== 'image/svg+xml') return await readAsDataUrl(file);
+    // 움직이는 GIF, WebP, APNG는 다시 그려야 멈추므로 JPEG만 원본을 씁니다.
+    if (fits && file.type === 'image/jpeg') return await readAsDataUrl(file);
 
     const canvas = document.createElement('canvas');
     canvas.width = width;

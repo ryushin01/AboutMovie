@@ -236,7 +236,8 @@ export default function RichEditor({
   }, [editor, labelId]);
 
   useEffect(() => {
-    editor.setEditable(!disabled);
+    // 잠그거나 풀어도 본문은 그대로이므로 변경 알림을 보내지 않습니다.
+    editor.setEditable(!disabled, false);
   }, [editor, disabled]);
 
   const state = useEditorState({

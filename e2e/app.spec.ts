@@ -463,6 +463,19 @@ test('키보드만으로 리뷰를 작성하고 상세로 이동한다', async (
   await expect(page.getByRole('main')).toBeFocused();
 });
 
+test('이미지가 있는 글을 고치지 않고 나가면 묻지 않는다', async ({ page }) => {
+  const dialogs: string[] = [];
+  page.on('dialog', (dialog) => {
+    dialogs.push(dialog.message());
+    return dialog.accept();
+  });
+  await page.goto('/reviews/sample-last-screening/edit');
+  await expect(editorOf(page).getByAltText('마지막 상영의 한 장면')).toBeVisible();
+  await page.getByRole('link', { name: '취소' }).click();
+  await expect(page).toHaveURL('/reviews/sample-last-screening');
+  expect(dialogs).toEqual([]);
+});
+
 test('작성 중 나가면 확인하고, 저장 후에는 묻지 않는다', async ({ page }) => {
   await page.goto('/reviews/new');
   const dialogs: string[] = [];
