@@ -15,20 +15,23 @@ function Root() {
   );
 }
 
-export const router = createBrowserRouter([
-  {
-    element: <Root />,
-    children: [
-      {
-        element: <SiteLayout />,
-        children: [
-          { path: '/', element: <HomePage /> },
-          { path: '/reviews/new', element: <ReviewNewPage /> },
-          { path: '/reviews/:id', element: <ReviewDetailPage /> },
-          { path: '/reviews/:id/edit', element: <ReviewEditPage /> },
-          { path: '*', element: <NotFoundPage /> },
-        ],
-      },
-    ],
-  },
-]);
+export const router = createBrowserRouter(
+  [
+    {
+      element: <Root />,
+      children: [
+        {
+          element: <SiteLayout />,
+          children: [
+            { path: '/', element: <HomePage /> },
+            { path: '/reviews/new', element: <ReviewNewPage /> },
+            { path: '/reviews/:id', element: <ReviewDetailPage /> },
+            { path: '/reviews/:id/edit', element: <ReviewEditPage /> },
+            { path: '*', element: <NotFoundPage /> },
+          ],
+        },
+      ],
+    },
+  ],
+  { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/' },
+);
