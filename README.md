@@ -1,7 +1,7 @@
 # AboutMovie
 
 [![CI](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml)
-![version](https://img.shields.io/badge/version-1.1.0-a82c0c)
+[![version](https://img.shields.io/badge/version-1.1.0-a82c0c)](https://github.com/ryushin01/AboutMovie/releases/latest)
 
 영화 포스터와 장면 이미지를 곁들여 리뷰를 쓰는 영화 리뷰 블로그입니다. 서버 없이 브라우저만으로 작성부터 저장까지 동작합니다.
 
@@ -44,7 +44,7 @@
 | 스타일 | Emotion, Pretendard |
 | 품질 | oxlint, Prettier, Vitest + React Testing Library, Playwright + axe (Chromium, Firefox, WebKit E2E) |
 | 배포 | GitHub Pages, GitHub Actions |
-| 자동화 | GitHub Actions |
+| 자동화 | GitHub Actions (CI, 배포 후 사이트 검사), Dependabot |
 
 ## 시작하기
 
@@ -62,6 +62,7 @@ pnpm dev    # http://localhost:5173
 | `pnpm typecheck` / `lint` / `format` | 타입 검사 / 린트(접근성, FSD 계층 포함) / 코드 정리 |
 | `pnpm test` | 단위·컴포넌트 테스트 |
 | `pnpm test:e2e` | 프로덕션 빌드의 흐름·넘침·접근성 검사 (먼저 `build` 필요) |
+| `pnpm test:live` | 배포된 사이트 검사 (`main`에 배포할 때마다 자동 실행) |
 | `pnpm screenshots` / `demo-gif` | README 스크린샷 / 시연 GIF 다시 만들기 (먼저 `build` 필요) |
 
 ## 프로젝트 구조
