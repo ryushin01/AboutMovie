@@ -4,7 +4,8 @@ import { expect, test } from '@playwright/test';
 // 배포된 사이트를 검사합니다. `pnpm test:live`로 실행하며, 배포 워크플로가 배포 후에 실행합니다.
 test.skip(!process.env.LIVE, 'LIVE=1일 때만 실행합니다.');
 
-const SITE = 'https://ryushin01.github.io/AboutMovie';
+// 배포 워크플로는 방금 배포한 주소를 LIVE_URL로 넘깁니다.
+const SITE = (process.env.LIVE_URL ?? 'https://ryushin01.github.io/AboutMovie').replace(/\/$/, '');
 const png = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAEBgIApD5fRAAAAABJRU5ErkJggg==',
   'base64',
@@ -30,7 +31,13 @@ test('배포된 사이트에서 전체 흐름이 동작한다', async ({ page })
   await test.step('목록', async () => {
     await page.goto(`${SITE}/`);
     await expect(page.getByRole('link', { name: '마지막 상영' })).toBeVisible();
-    expect(await page.evaluate(() => [...document.images].every((img) => img.naturalWidth > 0))).toBe(true);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.images.length > 0 && [...document.images].every((img) => img.naturalWidth > 0),
+        ),
+      )
+      .toBe(true);
     const { violations } = await new AxeBuilder({ page }).analyze();
     expect(violations.map((violation) => violation.id)).toEqual([]);
   });
@@ -54,7 +61,7 @@ test('배포된 사이트에서 전체 흐름이 동작한다', async ({ page })
     await page.getByLabel('장면 1 설명 (필수)').fill('장면');
     await page.getByRole('button', { name: '저장' }).click();
     await expect(page.getByRole('heading', { level: 1, name: '배포 확인' })).toBeVisible();
-    expect(new URL(page.url()).pathname).toMatch(/^\/AboutMovie\/reviews\//);
+    expect(page.url().startsWith(`${SITE}/reviews/`)).toBe(true);
     await page.reload();
     await expect(page.getByRole('heading', { level: 1, name: '배포 확인' })).toBeVisible();
   });
