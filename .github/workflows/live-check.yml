@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: live-check
+  group: live-check-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -19,12 +19,14 @@ env:
 jobs:
   verify:
     name: 배포된 사이트 검사
+    # 운영 주소에는 main만 배포되므로 다른 브랜치에서는 실행하지 않습니다.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: 이 커밋의 Netlify 배포 기다리기
         run: |
           for _ in $(seq 1 60); do
-            deployed=$(curl -fsS "$LIVE_URL/version.txt?sha=$GITHUB_SHA" || true)
+            deployed=$(curl -fsS --max-time 10 "$LIVE_URL/version.txt?sha=$GITHUB_SHA" || true)
             if [ "$deployed" = "$GITHUB_SHA" ]; then
               echo "배포 확인: $deployed"
               exit 0
