@@ -46,8 +46,9 @@ const mainCss = css`
   padding-inline: ${gutter};
   padding-bottom: 96px;
 
-  &:focus {
-    outline: none;
+  /* 키보드 사용자에게만 표시되며, 화면 가장자리에서 잘리지 않게 안쪽에 그립니다. */
+  &:focus-visible {
+    outline-offset: -3px;
   }
 `;
 const footerCss = css`

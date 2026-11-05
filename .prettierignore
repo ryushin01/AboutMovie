@@ -1,5 +1,4 @@
 dist
-storybook-static
 test-results
 playwright-report
 pnpm-lock.yaml

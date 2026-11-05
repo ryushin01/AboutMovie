@@ -8,7 +8,11 @@ const JPEG_QUALITY = 0.85;
 
 export function fitWithin(width: number, height: number, maxEdge: number) {
   const scale = Math.min(1, maxEdge / Math.max(width, height));
-  return { width: Math.round(width * scale), height: Math.round(height * scale) };
+  // 아주 가는 이미지도 한 변이 0이 되면 저장할 수 없으므로 최소 1px을 유지합니다.
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
 }
 
 function readAsDataUrl(file: File): Promise<string> {

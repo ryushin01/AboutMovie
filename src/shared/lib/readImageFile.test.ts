@@ -20,6 +20,10 @@ describe('fitWithin', () => {
     expect(fitWithin(4000, 2250, 1920)).toEqual({ width: 1920, height: 1080 });
   });
 
+  it('아주 가는 이미지도 한 변이 0이 되지 않는다', () => {
+    expect(fitWithin(4000, 1, 1500)).toEqual({ width: 1500, height: 1 });
+  });
+
   it('작은 이미지는 키우지 않는다', () => {
     expect(fitWithin(300, 200, 1500)).toEqual({ width: 300, height: 200 });
   });

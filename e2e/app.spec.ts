@@ -94,6 +94,7 @@ test('키보드로 본문 바로가기를 쓸 수 있다', async ({ page }) => {
   await expect(page.getByRole('link', { name: '본문 바로가기' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
+  await expect(page.getByRole('main')).toHaveCSS('outline-style', 'solid');
 });
 
 test('없는 주소와 없는 리뷰를 안내한다', async ({ page }) => {
@@ -127,6 +128,16 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       await page.goto('/reviews/new');
       await page.getByRole('button', { name: '저장' }).click();
+      await expectNoHorizontalOverflow(page);
+      await expectNoAxeViolations(page);
+
+      await page.goto('/reviews/sample-last-screening/edit');
+      await expect(page.getByLabel('영화 제목 (필수)')).toHaveValue('마지막 상영');
+      await expectNoHorizontalOverflow(page);
+      await expectNoAxeViolations(page);
+
+      await page.goto('/nope');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await expectNoAxeViolations(page);
 

@@ -1,7 +1,7 @@
 {
   "plugins": ["typescript", "react", "jsx-a11y", "unicorn", "oxc"],
   "categories": { "correctness": "error" },
-  "ignorePatterns": ["dist", "storybook-static"],
+  "ignorePatterns": ["dist"],
   "rules": {
     "react/react-in-jsx-scope": "off",
     "react-hooks/rules-of-hooks": "error",
