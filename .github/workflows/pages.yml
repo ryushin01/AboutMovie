@@ -34,7 +34,7 @@ jobs:
       - run: pnpm exec vite build --base=/AboutMovie/
       # 직접 주소로 들어와도 앱이 열리도록 합니다.
       - run: cp dist/index.html dist/404.html
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
       - id: deployment
