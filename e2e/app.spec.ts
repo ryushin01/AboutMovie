@@ -265,8 +265,9 @@ test('키보드만으로 리뷰를 작성하고 상세로 이동한다', async (
   await page.keyboard.type('4');
   await page.keyboard.press('Tab');
 
-  await expect(page.getByLabel('포스터 이미지 (필수)')).toBeFocused();
+  // 파일 선택 창 가로채기가 켜진 뒤에 누르도록, 대기를 먼저 걸고 브라우저와 한 번 왕복합니다.
   const chooser = page.waitForEvent('filechooser');
+  await expect(page.getByLabel('포스터 이미지 (필수)')).toBeFocused();
   await page.keyboard.press('Enter');
   await (await chooser).setFiles(image('poster.png'));
   await expect(page.getByAltText('선택한 포스터 미리보기')).toBeVisible();
