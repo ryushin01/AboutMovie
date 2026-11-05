@@ -3,6 +3,7 @@ import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 
 const styles = css`
   :root {
+    --gutter: clamp(16px, 3vw, 48px);
     color-scheme: light;
     --bg: #f3f0e8;
     --surface: #e8e4d9;

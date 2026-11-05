@@ -13,7 +13,7 @@ interface FieldProps {
   required?: boolean;
   hint?: string;
   error?: string;
-  children: (control: FieldControlProps) => ReactNode;
+  children: (control: FieldControlProps, labelId: string) => ReactNode;
 }
 
 const labelCss = css`
@@ -36,22 +36,26 @@ const errorCss = css`
 /** 레이블, 도움말, 오류 안내를 입력 요소와 연결합니다. */
 export function Field({ label, required, hint, error, children }: FieldProps) {
   const id = useId();
+  const labelId = `${id}-label`;
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
 
   return (
     <div>
-      <label htmlFor={id} css={labelCss}>
+      <label id={labelId} htmlFor={id} css={labelCss}>
         {label}
         {required && ' (필수)'}
       </label>
-      {children({
-        id,
-        required,
-        'aria-invalid': error ? true : undefined,
-        'aria-describedby': describedBy,
-      })}
+      {children(
+        {
+          id,
+          required,
+          'aria-invalid': error ? true : undefined,
+          'aria-describedby': describedBy,
+        },
+        labelId,
+      )}
       {hint && (
         <p id={hintId} css={hintCss}>
           {hint}

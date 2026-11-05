@@ -1,8 +1,11 @@
 import { css } from '@emotion/react';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import type { Editor } from '@tiptap/react';
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { Link } from 'react-router';
-import { useSaveReview, type Review } from '@/entities/review';
+import { GENRES, uploadImage, useSaveReview, type Review } from '@/entities/review';
+import { ApiError } from '@/shared/api/request';
+import { readImageFile, SCENE_MAX_EDGE } from '@/shared/lib/readImageFile';
 import { Button, buttonCss } from '@/shared/ui/Button';
 import { Field } from '@/shared/ui/Field';
 import { inputCss } from '@/shared/ui/styles';
@@ -17,13 +20,15 @@ import {
 import { useImageUpload } from '../model/useImageUpload';
 import { useLeaveGuard } from '../model/useLeaveGuard';
 import { PosterField } from './PosterField';
-import { SceneFields } from './SceneFields';
+
+// 편집기는 무거우므로 글을 쓸 때만 받습니다.
+const RichEditor = lazy(() => import('./RichEditor'));
 
 const formCss = css`
   display: grid;
   gap: 32px;
   min-width: 0;
-  max-width: 760px;
+  max-width: 860px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -61,7 +66,7 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
   const save = useSaveReview();
   const submitLock = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const sceneInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<Editor | null>(null);
   const alertRef = useRef<HTMLParagraphElement>(null);
 
   // 저장 중 잠겼던 버튼에서 초점을 잃으므로 실패 안내로 옮깁니다.
@@ -74,23 +79,19 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
 
   const change = (patch: Partial<Draft>) => setDraft((prev) => ({ ...prev, ...patch }));
 
-  const { reading, handlePoster, handleScenes } = useImageUpload({ setDraft, setErrors, setStatus });
-
-  const removeScene = (id: string, order: number) => {
-    change({ scenes: draft.scenes.filter((scene) => scene.id !== id) });
-    setStatus(`장면 ${order}을 삭제했습니다.`);
-    // 삭제한 버튼에 있던 초점을 잃지 않도록 옮깁니다.
-    sceneInputRef.current?.focus();
-  };
+  const { uploading, handlePoster } = useImageUpload({ setDraft, setErrors, setStatus });
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (submitLock.current || reading > 0) return;
+    if (submitLock.current || uploading) return;
 
     const next = validateDraft(draft);
     flushSync(() => setErrors(next));
     if (hasErrors(next)) {
-      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      // 편집기의 aria-invalid는 다음 렌더링에 붙으므로 오류 항목은 따로 확인합니다.
+      const onlyBody = Object.keys(next).length === 1 && next.body;
+      if (onlyBody) editorRef.current?.commands.focus();
+      else formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
       return;
     }
 
@@ -153,41 +154,55 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
           </Field>
         </div>
 
-        <PosterField poster={draft.poster} error={errors.poster} onChange={handlePoster} />
-
-        <Field label="리뷰 내용" required error={errors.body}>
+        <Field label="장르" required error={errors.genre}>
           {(control) => (
-            <textarea
+            <select
               {...control}
-              css={[inputCss, { minHeight: 280, resize: 'vertical', lineHeight: 1.7 }]}
-              value={draft.body}
-              onChange={(e) => change({ body: e.target.value })}
-            />
+              css={inputCss}
+              value={draft.genre}
+              onChange={(e) => change({ genre: e.target.value })}
+            >
+              <option value="">선택해 주세요</option>
+              {GENRES.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre}
+                </option>
+              ))}
+            </select>
           )}
         </Field>
 
-        <SceneFields
-          scenes={draft.scenes}
-          fileError={errors.sceneFile}
-          errors={errors.scenes}
-          inputRef={sceneInputRef}
-          onFiles={handleScenes}
-          onDescriptionChange={(id, description) =>
-            change({ scenes: draft.scenes.map((s) => (s.id === id ? { ...s, description } : s)) })
-          }
-          onRemove={removeScene}
-        />
+        <PosterField poster={draft.poster} error={errors.poster} onChange={handlePoster} />
+
+        <Field label="리뷰 내용" required error={errors.body}>
+          {(control, labelId) => (
+            <Suspense fallback={<output css={{ display: 'block' }}>편집기를 불러오는 중입니다.</output>}>
+              <RichEditor
+                value={draft.body}
+                onChange={(body) => change({ body })}
+                onUploadImage={async (file) => uploadImage(await readImageFile(file, SCENE_MAX_EDGE))}
+                editorRef={editorRef}
+                labelId={labelId}
+                invalid={Boolean(errors.body)}
+                describedBy={control['aria-describedby']}
+                disabled={save.isPending}
+              />
+            </Suspense>
+          )}
+        </Field>
 
         <output css={{ display: 'block', color: 'var(--muted)' }}>{status}</output>
 
         {save.isError && (
           <p ref={alertRef} role="alert" tabIndex={-1} css={alertCss}>
-            저장하지 못했습니다. 저장 공간이 부족하면 이미지를 줄여 다시 시도해 주세요.
+            {save.error instanceof ApiError && save.error.status === 401
+              ? '로그인이 끝났습니다. 다른 탭에서 다시 로그인한 뒤 저장해 주세요.'
+              : '저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'}
           </p>
         )}
 
         <div css={actionsCss}>
-          <Button type="submit" disabled={save.isPending || reading > 0}>
+          <Button type="submit" disabled={save.isPending || uploading}>
             {save.isPending ? '저장 중…' : '저장'}
           </Button>
           <Link to={cancelTo} css={buttonCss('outline')}>

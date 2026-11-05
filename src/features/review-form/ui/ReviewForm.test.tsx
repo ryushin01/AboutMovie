@@ -1,8 +1,8 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { set } from 'idb-keyval';
 import { describe, expect, it, vi } from 'vitest';
-import { readImageFile } from '@/shared/lib/readImageFile';
+import type { RichDoc } from '@/entities/review';
+import { installFakeApi, sampleReview } from '@/shared/lib/test/fakeApi';
 import { renderWithProviders } from '@/shared/lib/test/renderWithProviders';
 import { ReviewForm } from './ReviewForm';
 
@@ -11,15 +11,14 @@ vi.mock('@/shared/lib/readImageFile', () => ({
   SCENE_MAX_EDGE: 1920,
   readImageFile: vi.fn(async () => 'data:image/png;base64,AA'),
 }));
-vi.mock('idb-keyval', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('idb-keyval')>();
-  return { ...actual, set: vi.fn(actual.set) };
-});
 
 const image = (name: string) => new File(['x'], name, { type: 'image/png' });
+// 본문 편집기 입력은 브라우저 동작이라 E2E에서 검사하고, 여기서는 기존 본문이 있는 글로 폼을 검사합니다.
+const review = sampleReview() as never;
 
 describe('ReviewForm', () => {
   it('오류를 보여 주고 첫 오류 입력으로 초점을 옮긴다', async () => {
+    installFakeApi();
     const onSaved = vi.fn();
     renderWithProviders(<ReviewForm cancelTo="/" onSaved={onSaved} />);
 
@@ -27,105 +26,80 @@ describe('ReviewForm', () => {
 
     expect(screen.getByLabelText('영화 제목 (필수)')).toHaveFocus();
     expect(screen.getByText('오류: 포스터 이미지를 올려 주세요.')).toBeInTheDocument();
+    expect(screen.getByText('오류: 장르를 선택해 주세요.')).toBeInTheDocument();
+    expect(screen.getByText('오류: 리뷰 내용을 입력해 주세요.')).toBeInTheDocument();
     expect(onSaved).not.toHaveBeenCalled();
   });
 
-  it('장면 이미지와 설명까지 입력하면 저장한다', async () => {
+  it('포스터를 올려 받은 주소로 고친 내용을 저장한다', async () => {
     const user = userEvent.setup();
+    const { state } = installFakeApi();
     const onSaved = vi.fn();
-    renderWithProviders(<ReviewForm cancelTo="/" onSaved={onSaved} />);
+    renderWithProviders(<ReviewForm review={review} cancelTo="/" onSaved={onSaved} />);
 
-    await user.type(screen.getByLabelText('영화 제목 (필수)'), '새 영화');
-    await user.type(screen.getByLabelText('개봉 연도 (필수)'), '2024');
-    await user.selectOptions(screen.getByLabelText('평점 (필수)'), '4');
-    await user.type(screen.getByLabelText('리뷰 내용 (필수)'), '좋았다');
     await user.upload(screen.getByLabelText('포스터 이미지 (필수)'), image('poster.png'));
-    await screen.findByAltText('선택한 포스터 미리보기');
-    await user.upload(screen.getByLabelText('영화 속 장면 이미지'), image('scene.png'));
-    await user.type(await screen.findByLabelText('장면 1 설명 (필수)'), '바다');
-
+    await screen.findByText('포스터 이미지를 넣었습니다.');
+    await user.selectOptions(screen.getByLabelText('장르 (필수)'), 'SF');
     await user.click(screen.getByRole('button', { name: '저장' }));
 
-    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith('sample-1'));
+    const put = state.calls.find((call) => call.method === 'PUT');
+    expect(put?.path).toBe('/api/reviews/sample-1');
+    expect(put?.body).toMatchObject({ poster: '/api/images/uploaded.png', genre: 'SF' });
+    expect((put!.body as { body: RichDoc }).body.type).toBe('doc');
+  });
+
+  it('포스터를 올리지 못하면 입력에 오류를 보여 준다', async () => {
+    const user = userEvent.setup();
+    const { state } = installFakeApi();
+    state.fail = (_method, path) => path === '/api/images';
+    renderWithProviders(<ReviewForm cancelTo="/" onSaved={() => {}} />);
+
+    await user.upload(screen.getByLabelText('포스터 이미지 (필수)'), image('poster.png'));
+    await waitFor(() =>
+      expect(screen.getByLabelText('포스터 이미지 (필수)')).toHaveAttribute('aria-invalid', 'true'),
+    );
   });
 
   it('저장에 실패하면 안내하고 다시 시도할 수 있다', async () => {
     const user = userEvent.setup();
+    const { state } = installFakeApi();
     const onSaved = vi.fn();
-    renderWithProviders(<ReviewForm cancelTo="/" onSaved={onSaved} />);
+    state.fail = (method) => method === 'PUT';
+    renderWithProviders(<ReviewForm review={review} cancelTo="/" onSaved={onSaved} />);
 
-    await user.type(screen.getByLabelText('영화 제목 (필수)'), '새 영화');
-    await user.type(screen.getByLabelText('개봉 연도 (필수)'), '2024');
-    await user.selectOptions(screen.getByLabelText('평점 (필수)'), '4');
-    await user.type(screen.getByLabelText('리뷰 내용 (필수)'), '좋았다');
-    await user.upload(screen.getByLabelText('포스터 이미지 (필수)'), image('poster.png'));
-    await screen.findByAltText('선택한 포스터 미리보기');
-
-    vi.mocked(set).mockRejectedValueOnce(new DOMException('full', 'QuotaExceededError'));
     await user.click(screen.getByRole('button', { name: '저장' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('저장하지 못했습니다');
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus());
     expect(onSaved).not.toHaveBeenCalled();
 
+    state.fail = null;
     await user.click(screen.getByRole('button', { name: '저장' }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
   });
 
-  it('저장하는 동안 입력을 잠근다', async () => {
+  it('저장하는 동안 입력을 잠그고 한 번만 보낸다', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ReviewForm cancelTo="/" onSaved={() => {}} />);
-    await user.type(screen.getByLabelText('영화 제목 (필수)'), '새 영화');
-    await user.type(screen.getByLabelText('개봉 연도 (필수)'), '2024');
-    await user.selectOptions(screen.getByLabelText('평점 (필수)'), '4');
-    await user.type(screen.getByLabelText('리뷰 내용 (필수)'), '좋았다');
-    await user.upload(screen.getByLabelText('포스터 이미지 (필수)'), image('poster.png'));
-    await screen.findByAltText('선택한 포스터 미리보기');
-
+    const { state } = installFakeApi();
     let finish = () => {};
-    // 저장소가 set을 부르기 전에 finish를 불러도 되도록 약속을 미리 만듭니다.
-    const pendingSet = new Promise<void>((resolve) => (finish = resolve));
-    vi.mocked(set).mockImplementationOnce(() => pendingSet);
-    await user.click(screen.getByRole('button', { name: '저장' }));
+    state.hold = new Promise<void>((resolve) => (finish = resolve));
+    renderWithProviders(<ReviewForm review={review} cancelTo="/" onSaved={() => {}} />);
+
+    const save = screen.getByRole('button', { name: '저장' });
+    await user.click(save);
+    await user.click(save);
 
     await waitFor(() => expect(screen.getByLabelText('영화 제목 (필수)')).toBeDisabled());
     finish();
-    await waitFor(() => expect(screen.getByLabelText('영화 제목 (필수)')).toBeEnabled());
+    await waitFor(() => expect(state.calls.filter((call) => call.method === 'PUT')).toHaveLength(1));
   });
 
-  it('장면 이미지를 순서대로 한 장씩 처리하고, 실패한 파일만 안내한다', async () => {
-    const user = userEvent.setup();
-    let active = 0;
-    let maxActive = 0;
-    vi.mocked(readImageFile).mockImplementation(async (file) => {
-      active += 1;
-      maxActive = Math.max(maxActive, active);
-      await Promise.resolve();
-      active -= 1;
-      if (file.name === 'bad.png') throw new Error('bad.png: 실패');
-      return `data:image/png;base64,${file.name}`;
-    });
+  it('편집기 도구 모음은 Tab으로 한 번만 들어온다', async () => {
+    installFakeApi();
     renderWithProviders(<ReviewForm cancelTo="/" onSaved={() => {}} />);
-
-    await user.upload(screen.getByLabelText('영화 속 장면 이미지'), [
-      image('a.png'),
-      image('bad.png'),
-      image('c.png'),
-    ]);
-
-    await screen.findByLabelText('장면 2 설명 (필수)');
-    expect(maxActive).toBe(1);
-    expect(screen.getByAltText('장면 2 미리보기')).toHaveAttribute('src', 'data:image/png;base64,c.png');
-    expect(screen.getByText('오류: bad.png: 실패')).toBeInTheDocument();
-  });
-
-  it('장면을 삭제하면 초점을 장면 입력으로 옮긴다', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<ReviewForm cancelTo="/" onSaved={() => {}} />);
-
-    await user.upload(screen.getByLabelText('영화 속 장면 이미지'), image('scene.png'));
-    await user.click(await screen.findByRole('button', { name: '장면 1 삭제' }));
-
-    expect(screen.queryByLabelText('장면 1 설명 (필수)')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('영화 속 장면 이미지')).toHaveFocus();
+    const toolbar = await screen.findByRole('toolbar', { name: '글 서식' });
+    const focusable = toolbar.querySelectorAll('button[tabindex="0"]');
+    expect(focusable).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '굵게' })).toHaveAttribute('aria-pressed', 'false');
   });
 });

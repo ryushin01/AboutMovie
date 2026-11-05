@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router';
 import { useReview } from '@/entities/review';
+import { RequireCritic } from '@/entities/session';
 import { ReviewForm } from '@/features/review-form';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
@@ -7,7 +8,7 @@ import { buttonCss } from '@/shared/ui/Button';
 import { PageMessage } from '@/shared/ui/PageMessage';
 import { formTitleCss } from '@/shared/ui/styles';
 
-export function ReviewEditPage() {
+function EditContent() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { data: review, isPending, isError } = useReview(id);
@@ -35,5 +36,13 @@ export function ReviewEditPage() {
         onSaved={(savedId) => navigate(routes.review(savedId))}
       />
     </>
+  );
+}
+
+export function ReviewEditPage() {
+  return (
+    <RequireCritic>
+      <EditContent />
+    </RequireCritic>
   );
 }

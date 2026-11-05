@@ -1,6 +1,7 @@
 import { css } from '@emotion/react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { Rating, useReview } from '@/entities/review';
+import { Rating, RichText, useReview } from '@/entities/review';
+import { useSession } from '@/entities/session';
 import { DeleteReviewButton } from '@/features/delete-review';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
@@ -55,48 +56,11 @@ const metaCss = css`
   margin: 0 0 32px;
   color: var(--muted);
 `;
-const bodyCss = css`
-  max-width: 44rem;
-  margin: 0 0 40px;
-  font-size: clamp(1.125rem, 1.6vw, 1.375rem);
-  line-height: 1.8;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-`;
 const actionsCss = css`
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 `;
-const sectionTitleCss = css`
-  margin: clamp(56px, 8vw, 120px) 0 24px;
-  font-size: clamp(1.75rem, 4vw, 3.5rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-`;
-const galleryCss = css`
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(8px, 1.5vw, 24px);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-
-  /* 첫 장면은 크게, 짝이 없는 마지막 장면도 빈칸이 남지 않게 넓게 놓습니다. */
-  li:first-of-type,
-  li:last-of-type:nth-of-type(even) {
-    grid-column: 1 / -1;
-  }
-  img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    /* 비율이 다른 장면도 잘리지 않게 보여 줍니다. */
-    object-fit: contain;
-    background: var(--surface);
-  }
-`;
-
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -104,6 +68,7 @@ export function ReviewDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { data: review, isPending, isError } = useReview(id);
+  const { isCritic } = useSession();
   useDocumentTitle(review?.title ?? (review === null ? '리뷰를 찾을 수 없습니다' : undefined));
 
   if (isPending) return <output css={{ display: 'block' }}>리뷰를 불러오는 중입니다.</output>;
@@ -128,33 +93,25 @@ export function ReviewDetailPage() {
         <div css={articleCss}>
           <p css={metaCss}>
             <span>{review.year}년 개봉</span>
+            <span>{review.genre}</span>
             <Rating value={review.rating} />
             <time dateTime={review.createdAt}>{formatDate(review.createdAt)} 작성</time>
           </p>
-          <p css={bodyCss}>{review.body}</p>
-          <div css={actionsCss}>
-            <Link to={routes.editReview(review.id)} css={buttonCss()}>
-              수정
-            </Link>
-            <DeleteReviewButton id={review.id} title={review.title} onDeleted={() => navigate(routes.home)} />
-          </div>
+          <RichText doc={review.body} />
+          {isCritic && (
+            <div css={actionsCss}>
+              <Link to={routes.editReview(review.id)} css={buttonCss()}>
+                수정
+              </Link>
+              <DeleteReviewButton
+                id={review.id}
+                title={review.title}
+                onDeleted={() => navigate(routes.home)}
+              />
+            </div>
+          )}
         </div>
       </div>
-
-      {review.scenes.length > 0 && (
-        <section aria-labelledby="scenes-title">
-          <h2 id="scenes-title" css={sectionTitleCss}>
-            영화 속 장면
-          </h2>
-          <ul css={galleryCss}>
-            {review.scenes.map((scene) => (
-              <li key={scene.id}>
-                <img src={scene.src} alt={scene.description} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </article>
   );
 }

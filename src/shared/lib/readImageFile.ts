@@ -25,8 +25,9 @@ function readAsDataUrl(file: File): Promise<string> {
 }
 
 /**
- * 이미지 파일을 저장할 data URL로 바꿉니다.
+ * 이미지 파일을 올릴 data URL로 바꿉니다.
  * 긴 변을 maxEdge 이하로 줄이고, 브라우저가 표시할 수 없는 파일(HEIC 등)은 안내 문구로 거부합니다.
+ * SVG는 스크립트를 담을 수 있고 서버도 받지 않으므로 일반 이미지로 다시 그립니다.
  */
 export async function readImageFile(file: File, maxEdge: number): Promise<string> {
   if (!file.type.startsWith('image/')) {
@@ -46,7 +47,7 @@ export async function readImageFile(file: File, maxEdge: number): Promise<string
 
     const { width, height } = fitWithin(image.naturalWidth, image.naturalHeight, maxEdge);
     const fits = width === image.naturalWidth && file.size <= KEEP_ORIGINAL_BYTES;
-    if (fits || file.type === 'image/svg+xml') return await readAsDataUrl(file);
+    if (fits && file.type !== 'image/svg+xml') return await readAsDataUrl(file);
 
     const canvas = document.createElement('canvas');
     canvas.width = width;

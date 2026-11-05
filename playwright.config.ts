@@ -15,7 +15,7 @@ export default defineConfig({
   webServer: process.env.LIVE
     ? undefined
     : {
-        command: `pnpm exec vite preview --port ${PORT} --strictPort`,
+        command: `E2E=1 pnpm exec vite preview --port ${PORT} --strictPort`,
         port: PORT,
         reuseExistingServer: false,
       },
