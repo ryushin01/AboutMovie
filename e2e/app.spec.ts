@@ -374,8 +374,12 @@ test('목록과 상세 화면에서 포스터와 장면이 잘리지 않는다',
   await page.getByRole('link', { name: 'AboutMovie' }).click();
   const cardPoster = page.getByAltText('와이드 포스터');
   await expect(cardPoster).toHaveCSS('object-fit', 'contain');
-  const card = (await cardPoster.boundingBox())!;
-  expect(card.width / card.height).toBeCloseTo(2 / 3, 1);
+  // 목록이 다시 그려지는 동안에는 위치를 잴 수 없어 안정될 때까지 다시 잽니다.
+  await expect(async () => {
+    const card = await cardPoster.boundingBox();
+    expect(card).not.toBeNull();
+    expect(card!.width / card!.height).toBeCloseTo(2 / 3, 1);
+  }).toPass();
 });
 
 test('샘플을 지워도 되돌릴 수 있고, 직접 쓴 리뷰는 남는다', async ({ page }) => {
