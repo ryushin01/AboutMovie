@@ -16,6 +16,10 @@ test('화면 캡처', async ({ browser, baseURL }) => {
   await expect(page.getByRole('link', { name: '마지막 상영' })).toBeVisible();
   await page.screenshot(shot('home-dark'));
 
+  await page.setViewportSize({ width: 1200, height: 630 });
+  await page.screenshot({ path: 'public/og-image.jpg', type: 'jpeg', quality: 85 });
+  await page.setViewportSize({ width: 1440, height: 900 });
+
   await page.goto('/reviews/sample-last-screening');
   await expect(page.getByAltText('마지막 상영 포스터')).toBeVisible();
   await page.screenshot(shot('detail-dark'));
