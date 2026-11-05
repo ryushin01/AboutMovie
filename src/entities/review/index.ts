@@ -1,6 +1,7 @@
 export {
   useDeleteReview,
   useReview,
+  useRestoreSampleReviews,
   useReviews,
   useSaveReview,
   useSyncReviewsAcrossTabs,

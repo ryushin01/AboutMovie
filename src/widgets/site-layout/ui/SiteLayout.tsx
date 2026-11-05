@@ -43,6 +43,8 @@ const navCss = css`
   gap: 8px;
 `;
 const mainCss = css`
+  /* 내용이 늦게 그려져도 바닥글이 밀려 내려가지 않게 합니다. */
+  min-height: 100svh;
   padding-inline: ${gutter};
   padding-bottom: 96px;
 

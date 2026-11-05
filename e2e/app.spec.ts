@@ -8,6 +8,9 @@ const png = Buffer.from(
 );
 const image = (name: string) => ({ name, mimeType: 'image/png', buffer: png });
 
+/** Safari의 Tab은 기본 설정에서 링크와 버튼을 건너뛰고, Option+Tab은 모두 지나갑니다. */
+const tabKey = (browserName: string) => (browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
+
 async function expectNoAxeViolations(page: Page) {
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(', ')}`)).toEqual([]);
@@ -88,9 +91,9 @@ test('다크 모드를 저장하고 시스템 설정을 따른다', async ({ bro
   await context.close();
 });
 
-test('키보드로 본문 바로가기를 쓸 수 있다', async ({ page }) => {
+test('키보드로 본문 바로가기를 쓸 수 있다', async ({ page, browserName }) => {
   await page.goto('/');
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tabKey(browserName));
   await expect(page.getByRole('link', { name: '본문 바로가기' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
@@ -113,7 +116,13 @@ for (const colorScheme of ['light', 'dark'] as const) {
     [2200, 1200],
   ] as const) {
     test(`${colorScheme} ${width}px: 넘침과 접근성`, async ({ browser, baseURL }) => {
-      const context = await browser.newContext({ baseURL, colorScheme, viewport: { width, height } });
+      // 호버 전환 중간 색을 재지 않도록 애니메이션을 끕니다.
+      const context = await browser.newContext({
+        baseURL,
+        colorScheme,
+        viewport: { width, height },
+        reducedMotion: 'reduce',
+      });
       const page = await context.newPage();
 
       await page.goto('/');
@@ -175,7 +184,7 @@ test('HTTPS가 아닌 주소에서도 장면 이미지와 함께 저장한다', 
 
 test('큰 이미지를 줄여서 저장한다', async ({ page }) => {
   await page.goto('/reviews/new');
-  const makePng = (width: number, height: number) =>
+  const makeJpeg = (width: number, height: number) =>
     page.evaluate(
       ([w, h]) => {
         const canvas = document.createElement('canvas');
@@ -187,13 +196,14 @@ test('큰 이미지를 줄여서 저장한다', async ({ page }) => {
         gradient.addColorStop(1, '#15130f');
         context.fillStyle = gradient;
         context.fillRect(0, 0, w, h);
-        return canvas.toDataURL('image/png').split(',')[1];
+        // PNG는 브라우저에 따라 10MB를 넘어 업로드 제한에 걸립니다.
+        return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
       },
       [width, height],
     );
   const file = (name: string, base64: string) => ({
     name,
-    mimeType: 'image/png',
+    mimeType: 'image/jpeg',
     buffer: Buffer.from(base64, 'base64'),
   });
   const size = (alt: string) =>
@@ -203,7 +213,7 @@ test('큰 이미지를 줄여서 저장한다', async ({ page }) => {
       type: img.src.slice(0, 15),
     }));
 
-  await page.getByLabel('포스터 이미지 (필수)').setInputFiles(file('poster.png', await makePng(3000, 4500)));
+  await page.getByLabel('포스터 이미지 (필수)').setInputFiles(file('poster.jpg', await makeJpeg(3000, 4500)));
   await expect(page.getByAltText('선택한 포스터 미리보기')).toBeVisible();
   expect(await size('선택한 포스터 미리보기')).toEqual({
     width: 1000,
@@ -211,7 +221,7 @@ test('큰 이미지를 줄여서 저장한다', async ({ page }) => {
     type: 'data:image/jpeg',
   });
 
-  await page.getByLabel('영화 속 장면 이미지').setInputFiles(file('scene.png', await makePng(4000, 2250)));
+  await page.getByLabel('영화 속 장면 이미지').setInputFiles(file('scene.jpg', await makeJpeg(4000, 2250)));
   await expect(page.getByAltText('장면 1 미리보기')).toBeVisible();
   expect(await size('장면 1 미리보기')).toEqual({ width: 1920, height: 1080, type: 'data:image/jpeg' });
 });
@@ -253,17 +263,17 @@ test('모든 컨트롤의 대각선 길이가 6mm 이상이다', async ({ browse
   await context.close();
 });
 
-test('키보드만으로 리뷰를 작성하고 상세로 이동한다', async ({ page }) => {
+test('키보드만으로 리뷰를 작성하고 상세로 이동한다', async ({ page, browserName }) => {
   await page.goto('/reviews/new');
   await page.getByRole('heading', { name: '리뷰 쓰기' }).waitFor();
   await page.getByLabel('영화 제목 (필수)').focus();
   await page.keyboard.type('키보드 영화');
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tabKey(browserName));
   await page.keyboard.type('2024');
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tabKey(browserName));
   await expect(page.getByLabel('평점 (필수)')).toBeFocused();
   await page.keyboard.type('4');
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tabKey(browserName));
 
   // 파일 선택 창 가로채기가 켜진 뒤에 누르도록, 대기를 먼저 걸고 브라우저와 한 번 왕복합니다.
   const chooser = page.waitForEvent('filechooser');
@@ -272,12 +282,12 @@ test('키보드만으로 리뷰를 작성하고 상세로 이동한다', async (
   await (await chooser).setFiles(image('poster.png'));
   await expect(page.getByAltText('선택한 포스터 미리보기')).toBeVisible();
 
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tabKey(browserName));
   await expect(page.getByLabel('리뷰 내용 (필수)')).toBeFocused();
   await page.keyboard.type('키보드로 쓴 리뷰');
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tabKey(browserName));
   await expect(page.getByLabel('영화 속 장면 이미지')).toBeFocused();
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tabKey(browserName));
   await expect(page.getByRole('button', { name: '저장' })).toBeFocused();
   await page.keyboard.press('Enter');
 
@@ -358,8 +368,7 @@ test('목록과 상세 화면에서 포스터와 장면이 잘리지 않는다',
 
   const poster = page.getByAltText('와이드 포스터');
   await expect(poster).toBeVisible();
-  const box = (await poster.boundingBox())!;
-  expect(box.width / box.height).toBeCloseTo(4, 1);
+  await expect(poster).toHaveCSS('object-fit', 'contain');
   await expect(page.getByAltText('넓은 장면')).toHaveCSS('object-fit', 'contain');
 
   await page.getByRole('link', { name: 'AboutMovie' }).click();
@@ -367,4 +376,40 @@ test('목록과 상세 화면에서 포스터와 장면이 잘리지 않는다',
   await expect(cardPoster).toHaveCSS('object-fit', 'contain');
   const card = (await cardPoster.boundingBox())!;
   expect(card.width / card.height).toBeCloseTo(2 / 3, 1);
+});
+
+test('샘플을 지워도 되돌릴 수 있고, 직접 쓴 리뷰는 남는다', async ({ page }) => {
+  await page.goto('/reviews/new');
+  await fillRequired(page, '내 리뷰');
+  await page.getByRole('button', { name: '저장' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '내 리뷰' })).toBeVisible();
+
+  page.on('dialog', (dialog) => dialog.accept());
+  await page.goto('/reviews/sample-winter-route');
+  await page.getByRole('button', { name: '삭제' }).click();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByText('리뷰 3편')).toBeVisible();
+  await expect(page.getByRole('link', { name: '겨울의 항로' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: '샘플 리뷰 되돌리기' }).click();
+  await expect(page.getByRole('link', { name: '겨울의 항로' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '내 리뷰' })).toBeVisible();
+  await expect(page.getByText('리뷰 4편')).toBeVisible();
+});
+
+test('리뷰가 4편이면 한 줄에 빈칸 없이 놓인다', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  await page.goto('/reviews/new');
+  await fillRequired(page, '넷째 리뷰');
+  await page.getByRole('button', { name: '저장' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '넷째 리뷰' })).toBeVisible();
+  await page.getByRole('link', { name: 'AboutMovie' }).click();
+  await expect(page.getByText('리뷰 4편')).toBeVisible();
+
+  const items = page.getByRole('main').getByRole('listitem');
+  await expect(items).toHaveCount(4);
+  const boxes = await items.evaluateAll((elements) => elements.map((el) => el.getBoundingClientRect().top));
+  expect(new Set(boxes).size).toBe(1);
+  await context.close();
 });

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { deleteReview, getReview, listReviews, saveReview } from './reviewStorage';
+import { deleteReview, getReview, listReviews, restoreSampleReviews, saveReview } from './reviewStorage';
 
 const KEY = 'reviews';
 const CHANNEL = 'about-movie-reviews';
@@ -42,6 +42,17 @@ export function useDeleteReview() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: deleteReview,
+    onSuccess: () => {
+      notifyOtherTabs();
+      return client.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+export function useRestoreSampleReviews() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: restoreSampleReviews,
     onSuccess: () => {
       notifyOtherTabs();
       return client.invalidateQueries({ queryKey: [KEY] });

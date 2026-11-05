@@ -12,6 +12,14 @@ async function ensureSeeded() {
   await setMany([...seedReviews.map((r): [string, Review] => [r.id, r]), [SEEDED_KEY, true]], store);
 }
 
+/** 샘플 리뷰만 처음 상태로 되돌립니다. 직접 쓴 리뷰는 건드리지 않습니다. */
+export async function restoreSampleReviews(): Promise<void> {
+  await setMany(
+    seedReviews.map((review): [string, Review] => [review.id, review]),
+    store,
+  );
+}
+
 export async function listReviews(): Promise<Review[]> {
   await ensureSeeded();
   const rows = await entries<string, Review | true>(store);

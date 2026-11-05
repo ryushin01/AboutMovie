@@ -1,10 +1,8 @@
 import { css } from '@emotion/react';
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { flushSync } from 'react-dom';
-import { Link, useBlocker } from 'react-router';
-import { useSaveReview, type Review, type Scene } from '@/entities/review';
-import { createId } from '@/shared/lib/createId';
-import { POSTER_MAX_EDGE, readImageFile, SCENE_MAX_EDGE } from '@/shared/lib/readImageFile';
+import { Link } from 'react-router';
+import { useSaveReview, type Review } from '@/entities/review';
 import { Button, buttonCss } from '@/shared/ui/Button';
 import { Field } from '@/shared/ui/Field';
 import { inputCss } from '@/shared/ui/styles';
@@ -16,6 +14,10 @@ import {
   type Draft,
   type DraftErrors,
 } from '../model/draft';
+import { useImageUpload } from '../model/useImageUpload';
+import { useLeaveGuard } from '../model/useLeaveGuard';
+import { PosterField } from './PosterField';
+import { SceneFields } from './SceneFields';
 
 const formCss = css`
   display: grid;
@@ -30,45 +32,6 @@ const rowCss = css`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 32px;
-`;
-const previewCss = css`
-  display: block;
-  width: 160px;
-  aspect-ratio: 2 / 3;
-  margin-top: 12px;
-  object-fit: contain;
-  background: var(--surface);
-`;
-const scenesCss = css`
-  display: grid;
-  gap: 24px;
-  margin: 16px 0 0;
-  padding: 0;
-  list-style: none;
-
-  li {
-    display: grid;
-    grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
-    gap: 16px;
-    align-items: start;
-    padding-top: 24px;
-    border-top: 1px solid var(--field-line);
-  }
-  img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    object-fit: contain;
-    background: var(--surface);
-  }
-  button {
-    margin-top: 12px;
-  }
-  @media (max-width: 560px) {
-    li {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
 `;
 const actionsCss = css`
   display: flex;
@@ -94,7 +57,6 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
   const [initialDraft] = useState<Draft>(() => toDraft(review));
   const [draft, setDraft] = useState<Draft>(initialDraft);
   const [errors, setErrors] = useState<DraftErrors>({});
-  const [reading, setReading] = useState(0);
   const [status, setStatus] = useState('');
   const save = useSaveReview();
   const submitLock = useRef(false);
@@ -108,72 +70,11 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
   }, [save.isError]);
 
   const saved = useRef(false);
-  const changed = isDraftChanged(initialDraft, draft);
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      changed && !saved.current && currentLocation.pathname !== nextLocation.pathname,
-  );
-
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return;
-    if (window.confirm('작성 중인 내용이 사라집니다. 이 화면을 나갈까요?')) blocker.proceed();
-    else blocker.reset();
-  }, [blocker]);
-
-  // 새로고침이나 탭 닫기는 라우터가 막을 수 없어 브라우저 경고를 씁니다.
-  useEffect(() => {
-    if (!changed) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      if (!saved.current) event.preventDefault();
-    };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [changed]);
+  useLeaveGuard(isDraftChanged(initialDraft, draft), saved);
 
   const change = (patch: Partial<Draft>) => setDraft((prev) => ({ ...prev, ...patch }));
 
-  const handlePoster = async (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.target;
-    const file = input.files?.[0];
-    if (!file) return;
-    setReading((n) => n + 1);
-    try {
-      const poster = await readImageFile(file, POSTER_MAX_EDGE);
-      change({ poster });
-      setErrors((prev) => ({ ...prev, poster: undefined }));
-      setStatus('포스터 이미지를 넣었습니다.');
-    } catch (error) {
-      setErrors((prev) => ({ ...prev, poster: (error as Error).message }));
-    } finally {
-      input.value = '';
-      setReading((n) => n - 1);
-    }
-  };
-
-  const handleScenes = async (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.target;
-    const files = Array.from(input.files ?? []);
-    if (files.length === 0) return;
-    setReading((n) => n + 1);
-    try {
-      // 큰 이미지를 한꺼번에 디코딩하면 메모리가 부족할 수 있어 한 장씩 처리합니다.
-      const added: Scene[] = [];
-      const failed: string[] = [];
-      for (const file of files) {
-        try {
-          added.push({ id: createId(), src: await readImageFile(file, SCENE_MAX_EDGE), description: '' });
-        } catch (error) {
-          failed.push((error as Error).message);
-        }
-      }
-      setDraft((prev) => ({ ...prev, scenes: [...prev.scenes, ...added] }));
-      setErrors((prev) => ({ ...prev, sceneFile: failed.join(' ') || undefined }));
-      if (added.length > 0) setStatus(`장면 이미지 ${added.length}개를 넣었습니다. 설명을 입력해 주세요.`);
-    } finally {
-      input.value = '';
-      setReading((n) => n - 1);
-    }
-  };
+  const { reading, handlePoster, handleScenes } = useImageUpload({ setDraft, setErrors, setStatus });
 
   const removeScene = (id: string, order: number) => {
     change({ scenes: draft.scenes.filter((scene) => scene.id !== id) });
@@ -252,14 +153,7 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
           </Field>
         </div>
 
-        <Field label="포스터 이미지" required hint="10MB 이하의 이미지 파일" error={errors.poster}>
-          {(control) => (
-            <>
-              <input {...control} css={inputCss} type="file" accept="image/*" onChange={handlePoster} />
-              {draft.poster && <img css={previewCss} src={draft.poster} alt="선택한 포스터 미리보기" />}
-            </>
-          )}
-        </Field>
+        <PosterField poster={draft.poster} error={errors.poster} onChange={handlePoster} />
 
         <Field label="리뷰 내용" required error={errors.body}>
           {(control) => (
@@ -272,61 +166,17 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
           )}
         </Field>
 
-        <div>
-          <Field
-            label="영화 속 장면 이미지"
-            hint="여러 장을 함께 고를 수 있습니다. 10MB 이하의 이미지 파일"
-            error={errors.sceneFile}
-          >
-            {(control) => (
-              <input
-                {...control}
-                ref={sceneInputRef}
-                css={inputCss}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleScenes}
-              />
-            )}
-          </Field>
-
-          {draft.scenes.length > 0 && (
-            <ul css={scenesCss}>
-              {draft.scenes.map((scene, index) => (
-                <li key={scene.id}>
-                  <img src={scene.src} alt={scene.description || `장면 ${index + 1} 미리보기`} />
-                  <div>
-                    <Field
-                      label={`장면 ${index + 1} 설명`}
-                      required
-                      hint="이미지를 볼 수 없는 사람을 위한 대체 텍스트로 쓰입니다."
-                      error={errors.scenes?.[scene.id]}
-                    >
-                      {(control) => (
-                        <input
-                          {...control}
-                          css={inputCss}
-                          value={scene.description}
-                          onChange={(e) =>
-                            change({
-                              scenes: draft.scenes.map((s) =>
-                                s.id === scene.id ? { ...s, description: e.target.value } : s,
-                              ),
-                            })
-                          }
-                        />
-                      )}
-                    </Field>
-                    <Button variant="outline" onClick={() => removeScene(scene.id, index + 1)}>
-                      장면 {index + 1} 삭제
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <SceneFields
+          scenes={draft.scenes}
+          fileError={errors.sceneFile}
+          errors={errors.scenes}
+          inputRef={sceneInputRef}
+          onFiles={handleScenes}
+          onDescriptionChange={(id, description) =>
+            change({ scenes: draft.scenes.map((s) => (s.id === id ? { ...s, description } : s)) })
+          }
+          onRemove={removeScene}
+        />
 
         <output css={{ display: 'block', color: 'var(--muted)' }}>{status}</output>
 

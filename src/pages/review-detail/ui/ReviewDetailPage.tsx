@@ -34,7 +34,10 @@ const posterCss = css`
   img {
     display: block;
     width: 100%;
-    height: auto;
+    /* 불러오는 동안 화면이 밀리지 않도록 틀을 유지하고, 비율이 달라도 자르지 않습니다. */
+    aspect-ratio: 2 / 3;
+    object-fit: contain;
+    background: var(--surface);
   }
   @media (max-width: 800px) {
     max-width: 320px;

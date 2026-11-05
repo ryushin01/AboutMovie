@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deleteReview, getReview, listReviews, saveReview } from './reviewStorage';
+import { deleteReview, getReview, listReviews, restoreSampleReviews, saveReview } from './reviewStorage';
 
 const input = {
   title: '새 영화',
@@ -28,5 +28,17 @@ describe('reviewStorage', () => {
 
     await deleteReview(created.id);
     await expect(getReview(created.id)).resolves.toBeNull();
+  });
+
+  it('샘플을 되돌려도 직접 쓴 리뷰는 남는다', async () => {
+    const mine = await saveReview(input);
+    await deleteReview('sample-winter-route');
+    await saveReview({ ...input, id: 'sample-under-neon', title: '고친 샘플' });
+
+    await restoreSampleReviews();
+
+    await expect(getReview('sample-winter-route')).resolves.not.toBeNull();
+    await expect(getReview('sample-under-neon')).resolves.toMatchObject({ title: '네온 아래서' });
+    await expect(getReview(mine.id)).resolves.toMatchObject({ title: input.title });
   });
 });

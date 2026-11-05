@@ -1,7 +1,7 @@
 # AboutMovie
 
 [![CI](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml)
-![version](https://img.shields.io/badge/version-1.0.0-a82c0c)
+![version](https://img.shields.io/badge/version-1.1.0-a82c0c)
 
 영화 포스터와 장면 이미지를 곁들여 리뷰를 쓰는 영화 리뷰 블로그입니다. 서버 없이 브라우저만으로 작성부터 저장까지 동작합니다.
 
@@ -10,6 +10,8 @@
 ## 화면
 
 화면의 영화와 리뷰는 모두 가상 데이터이고, 포스터와 장면 이미지는 코드로 그린 것입니다.
+
+![목록에서 리뷰 쓰기로 이동해 제목, 포스터, 본문, 장면을 입력하고 저장한 뒤 상세 화면과 라이트 모드, 새 카드가 추가된 목록을 차례로 보여 주는 시연](docs/images/demo.gif)
 
 | 목록 (다크 모드) | 목록 (라이트 모드) |
 |---|---|
@@ -27,7 +29,7 @@
 - 장면 설명을 이미지의 대체 텍스트로 사용
 - 작성 중 나가기 전 확인, 다른 탭의 변경 바로 반영
 - 다크 모드 (처음에는 시스템 설정을 따르고, 고른 값을 기억)
-- 처음 방문하면 가상 샘플 리뷰 3편을 표시 (삭제하면 다시 생기지 않음)
+- 처음 방문하면 가상 샘플 리뷰 3편을 표시, 지우거나 고쳐도 버튼 하나로 되돌리기 (직접 쓴 리뷰는 유지)
 
 ## 기술 스택
 
@@ -38,7 +40,7 @@
 | 프레임워크 | React 19, Vite 8, TypeScript 7, React Router 8 |
 | 상태·데이터 | TanStack Query v5, idb-keyval (IndexedDB) |
 | 스타일 | Emotion, Pretendard |
-| 품질 | oxlint, Prettier, Vitest + React Testing Library, Playwright + axe (E2E) |
+| 품질 | oxlint, Prettier, Vitest + React Testing Library, Playwright + axe (Chromium, Firefox, WebKit E2E) |
 | 자동화 | GitHub Actions |
 
 ## 시작하기
@@ -57,7 +59,7 @@ pnpm dev    # http://localhost:5173
 | `pnpm typecheck` / `lint` / `format` | 타입 검사 / 린트(접근성, FSD 계층 포함) / 코드 정리 |
 | `pnpm test` | 단위·컴포넌트 테스트 |
 | `pnpm test:e2e` | 프로덕션 빌드의 흐름·넘침·접근성 검사 (먼저 `build` 필요) |
-| `pnpm screenshots` | README 스크린샷 다시 만들기 (먼저 `build` 필요) |
+| `pnpm screenshots` / `demo-gif` | README 스크린샷 / 시연 GIF 다시 만들기 (먼저 `build` 필요) |
 
 ## 프로젝트 구조
 
@@ -71,7 +73,7 @@ src/
 ├─ app/             진입점, 라우터, 전역 스타일과 테마 색상
 ├─ pages/           home, review-detail, review-new, review-edit, not-found
 ├─ widgets/         site-layout (머리글, 본문 바로가기, 바닥글)
-├─ features/        review-form, delete-review, toggle-theme
+├─ features/        review-form, delete-review, restore-samples, toggle-theme
 ├─ entities/review/ 리뷰 저장소, 쿼리, 샘플 데이터, 카드
 └─ shared/          공통 UI, 경로, 유틸리티
 ```
