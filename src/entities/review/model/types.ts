@@ -30,7 +30,7 @@ export interface Review {
   year: number;
   /** 1~5 */
   rating: number;
-  /** 한 개 이상. GENRES 순서로 저장합니다. */
+  /** 한 개 이상. API로 저장할 때 GENRES 순서로 맞춥니다. */
   genres: Genre[];
   /** 이미지 주소 (`/api/images/...` 또는 `/seed/...`) */
   poster: string;

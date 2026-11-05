@@ -1,4 +1,7 @@
 // @vitest-environment node
+import { cpSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { NetlifyDB } from '@netlify/database-dev';
 import { Client } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -18,6 +21,35 @@ const fields = {
   poster: '/api/images/a.jpg',
   body,
 };
+
+it('시드 확장은 운영자가 이미 고친 글을 덮어쓰지 않는다', async () => {
+  const dir = './netlify/database/migrations';
+  const names = readdirSync(dir).sort();
+  const expansion = names.findIndex((name) => name.endsWith('seed_more_reviews.sql'));
+  const temp = mkdtempSync(join(tmpdir(), 'migrations-'));
+  names.slice(0, expansion).forEach((name) => cpSync(join(dir, name), join(temp, name)));
+
+  const database = new NetlifyDB();
+  const connectionString = await database.start();
+  const client = new Client({ connectionString });
+  try {
+    await database.applyMigrations(temp);
+    await client.connect();
+    await updateReview(client, 'sample-last-screening', { ...fields, title: '고친 글' });
+    cpSync(join(dir, names[expansion]), join(temp, names[expansion]));
+    await database.applyMigrations(temp);
+
+    const edited = await findReview(client, 'sample-last-screening');
+    expect(edited?.title).toBe('고친 글');
+    expect(edited?.body).toEqual(body);
+    const untouched = await findReview(client, 'sample-winter-route');
+    expect(untouched?.genres).toEqual(['드라마', '모험']);
+  } finally {
+    await client.end();
+    await database.stop();
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
 
 // 실제 Postgres에 마이그레이션을 적용해 시드와 쿼리를 함께 검사합니다.
 describe('reviewRepository', () => {

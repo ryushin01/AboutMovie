@@ -281,7 +281,7 @@ const updates = ORIGINAL_FILMS.map(([id, title, , , , from, to, , alt, first, se
   const alts = [alt, secondAlt];
   writeImages({ id, title, from, to, alts });
   const body = buildBody(id, [first, second, ...more], alts);
-  return `UPDATE reviews SET genres = ${sqlGenres(genres)}, body = ${sql(JSON.stringify(body))}::jsonb WHERE id = ${sql(`sample-${id}`)};`;
+  return `UPDATE reviews SET genres = ${sqlGenres(genres)}, body = ${sql(JSON.stringify(body))}::jsonb WHERE id = ${sql(`sample-${id}`)} AND updated_at = created_at;`;
 });
 
 // 처음 16편의 마지막 글(2026-07-15)부터 한 주씩 거슬러 올라갑니다.
@@ -300,6 +300,7 @@ writeFileSync(
   OUT,
   `-- scripts/generate-seed.mjs로 만든 가상의 리뷰입니다.
 -- 처음 16편의 본문을 늘려 글과 이미지를 번갈아 놓고 장르를 더한 뒤, 20편을 새로 넣습니다.
+-- 운영자가 이미 고친 글(updated_at이 달라진 글)은 덮어쓰지 않습니다.
 ${updates.join('\n')}
 
 INSERT INTO reviews (id, title, year, rating, genres, poster, body, created_at, updated_at) VALUES

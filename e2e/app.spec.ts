@@ -78,6 +78,28 @@ test('글과 이미지를 번갈아 쓰면 상세 화면에 같은 순서로 나
   expect(order).toEqual(['첫 문단', '첫째 그림', '둘째 문단', '둘째 그림', '셋째 문단']);
 });
 
+test('업로드 중 Esc로 닫으면 이미지를 넣지 않는다', async ({ page }) => {
+  let finished = false;
+  await page.route('**/api/images', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.fallback();
+    finished = true;
+  });
+  await page.goto('/reviews/new');
+  await editorOf(page).click();
+  await page.getByRole('button', { name: '이미지', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '이미지 넣기' });
+  await dialog.getByLabel('이미지 파일 (필수)').setInputFiles(image('late.png'));
+  await dialog.getByLabel('이미지 설명 (필수)').fill('늦은 그림');
+  await dialog.getByRole('button', { name: '넣기' }).click();
+  await expect(dialog.getByRole('button', { name: '올리는 중…' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => finished).toBe(true);
+  await page.waitForTimeout(100);
+  await expect(editorOf(page).locator('img')).toHaveCount(0);
+});
+
 test('문단 사이에 이미지를 끼워 넣으면 문단이 나뉜다', async ({ page }) => {
   await page.goto('/reviews/new');
   await fillRequired(page, '끼워 넣는 영화');

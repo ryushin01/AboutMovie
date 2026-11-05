@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Field } from '@/shared/ui/Field';
 import { inputCss } from '@/shared/ui/styles';
 import { EditorDialog } from './EditorDialog';
@@ -20,6 +20,14 @@ export function ImageDialogFields({ onUpload, onInsert, onClose }: Props) {
   const [alt, setAlt] = useState('');
   const [errors, setErrors] = useState<{ file?: string; alt?: string }>({});
   const [uploading, setUploading] = useState(false);
+  // 업로드 중에도 Esc로 대화상자를 닫을 수 있습니다. 닫은 뒤 끝난 업로드는 본문에 넣지 않습니다.
+  const open = useRef(true);
+  useEffect(() => {
+    open.current = true;
+    return () => {
+      open.current = false;
+    };
+  }, []);
 
   const submit = async () => {
     const next = {
@@ -31,7 +39,8 @@ export function ImageDialogFields({ onUpload, onInsert, onClose }: Props) {
 
     setUploading(true);
     try {
-      onInsert({ src: await onUpload(file), alt: alt.trim() });
+      const src = await onUpload(file);
+      if (open.current) onInsert({ src, alt: alt.trim() });
     } catch (error) {
       setErrors({ file: (error as Error).message });
       setUploading(false);
