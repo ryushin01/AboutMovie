@@ -9,6 +9,7 @@
 - Dependabot
 - README 시연 GIF와 생성 스크립트
 - Lighthouse 측정 결과 기록
+- 공유 이미지 (`og:image`)
 
 ### 수정
 
