@@ -82,7 +82,9 @@ describe('ReviewForm', () => {
     await screen.findByAltText('선택한 포스터 미리보기');
 
     let finish = () => {};
-    vi.mocked(set).mockImplementationOnce(() => new Promise<void>((resolve) => (finish = resolve)));
+    // 저장소가 set을 부르기 전에 finish를 불러도 되도록 약속을 미리 만듭니다.
+    const pendingSet = new Promise<void>((resolve) => (finish = resolve));
+    vi.mocked(set).mockImplementationOnce(() => pendingSet);
     await user.click(screen.getByRole('button', { name: '저장' }));
 
     await waitFor(() => expect(screen.getByLabelText('영화 제목 (필수)')).toBeDisabled());
