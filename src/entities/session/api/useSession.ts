@@ -24,3 +24,12 @@ export function useRefreshSession() {
   const client = useQueryClient();
   return () => client.invalidateQueries({ queryKey: KEY });
 }
+
+/** 로그아웃이 끝난 뒤 쓰기 메뉴를 바로 닫습니다. 다시 조회하면 그 요청이 실패할 때 이전 권한이 남습니다. */
+export function useClearSession() {
+  const client = useQueryClient();
+  return async () => {
+    await client.cancelQueries({ queryKey: KEY });
+    client.setQueryData(KEY, { isCritic: false });
+  };
+}
