@@ -73,7 +73,7 @@ test('시연 GIF 만들기', async ({ browser, baseURL }) => {
   await page.getByLabel('영화 제목 (필수)').fill('새벽의 활주로');
   await page.getByLabel('개봉 연도 (필수)').fill('2026');
   await page.getByLabel('평점 (필수)').selectOption('5');
-  await page.getByLabel('장르 (필수)').selectOption('드라마');
+  await page.getByRole('checkbox', { name: '드라마' }).check();
   await page
     .getByLabel('포스터 이미지 (필수)')
     .setInputFiles(await image('poster.jpg', 1200, 1800, '#2b6e4f', '#0b1f18'));

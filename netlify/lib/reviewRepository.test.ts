@@ -2,7 +2,8 @@
 import { NetlifyDB } from '@netlify/database-dev';
 import { Client } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { RichDoc } from '../../src/entities/review/model/richText';
+import { isValidRichDoc, type RichDoc } from '../../src/entities/review/model/richText';
+import { GENRES } from '../../src/entities/review/model/types';
 import { createReview, deleteReview, findReview, listReviews, updateReview } from './reviewRepository';
 
 const body: RichDoc = {
@@ -13,7 +14,7 @@ const fields = {
   title: '테스트 영화',
   year: 2025,
   rating: 4,
-  genre: '드라마' as const,
+  genres: ['드라마', 'SF'] as ('드라마' | 'SF')[],
   poster: '/api/images/a.jpg',
   body,
 };
@@ -37,10 +38,21 @@ describe('reviewRepository', () => {
 
   it('시드는 최신순으로 나오고 본문은 JSON으로 돌아온다', async () => {
     const reviews = await listReviews(client);
-    expect(reviews).toHaveLength(16);
+    expect(reviews).toHaveLength(36);
     expect(reviews[0].id).toBe('sample-last-screening');
     expect(reviews[0].body.type).toBe('doc');
     expect(reviews[0].createdAt).toBe('2026-10-28T09:00:00.000Z');
+    expect(reviews[0].genres).toEqual(['드라마']);
+  });
+
+  it('시드는 TMDB의 모든 장르를 쓰고 글과 이미지가 번갈아 나온다', async () => {
+    const reviews = await listReviews(client);
+    expect(new Set(reviews.flatMap((review) => review.genres))).toEqual(new Set(GENRES));
+    for (const review of reviews) {
+      const types = review.body.content?.map((node) => node.type) ?? [];
+      expect(types.slice(0, 4), review.id).toEqual(['paragraph', 'image', 'paragraph', 'image']);
+      expect(isValidRichDoc(review.body), review.id).toBe(true);
+    }
   });
 
   it('만들고 고치고 지운다', async () => {

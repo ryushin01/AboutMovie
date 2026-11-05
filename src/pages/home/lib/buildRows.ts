@@ -18,7 +18,7 @@ export function buildRows(reviews: Review[]): Row[] {
     { title: '평론가 추천', reviews: recommended.slice(0, ROW_LIMIT) },
     ...GENRES.map((genre) => ({
       title: genre as string,
-      reviews: reviews.filter((review) => review.genre === genre),
+      reviews: reviews.filter((review) => review.genres.includes(genre)),
     })),
   ].filter((row) => row.reviews.length > 0);
 }

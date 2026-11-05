@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { useReviews } from '@/entities/review';
+import { GENRES, GenreTags, useReviews } from '@/entities/review';
 import { useSession } from '@/entities/session';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
@@ -39,6 +39,11 @@ export function HomePage() {
   return (
     <>
       <FeaturedReview review={reviews[0]} />
+      <nav aria-label="장르별 리뷰" css={{ marginTop: 24 }}>
+        <GenreTags
+          genres={GENRES.filter((genre) => reviews.some((review) => review.genres.includes(genre)))}
+        />
+      </nav>
       {buildRows(reviews).map((row) => (
         <ReviewRow key={row.title} title={row.title} reviews={row.reviews} />
       ))}

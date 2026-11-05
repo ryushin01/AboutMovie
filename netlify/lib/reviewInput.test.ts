@@ -3,7 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { parseReviewFields } from './reviewInput';
 
 const body = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '본문' }] }] };
-const valid = { title: ' 영화 ', year: 2025, rating: 4, genre: '드라마', poster: '/api/images/a.jpg', body };
+const valid = {
+  title: ' 영화 ',
+  year: 2025,
+  rating: 4,
+  genres: ['드라마'],
+  poster: '/api/images/a.jpg',
+  body,
+};
 const invalidOf = (patch: object) => {
   const result = parseReviewFields({ ...valid, ...patch });
   return 'invalid' in result ? result.invalid : [];
@@ -21,7 +28,10 @@ describe('parseReviewFields', () => {
     [{ year: 1800 }, 'year'],
     [{ year: '2024' }, 'year'],
     [{ rating: 6 }, 'rating'],
-    [{ genre: '없는 장르' }, 'genre'],
+    [{ genres: ['없는 장르'] }, 'genres'],
+    [{ genres: [] }, 'genres'],
+    [{ genres: '드라마' }, 'genres'],
+    [{ genres: ['드라마', '드라마'] }, 'genres'],
     [{ poster: 'https://evil.example/a.jpg' }, 'poster'],
     [{ poster: 'javascript:alert(1)' }, 'poster'],
     [{ body: { type: 'doc', content: [{ type: 'paragraph' }] } }, 'body'],

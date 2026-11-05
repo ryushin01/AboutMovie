@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
 import { Link } from 'react-router';
-import { plainText, Rating, type Review } from '@/entities/review';
+import { GenreTags, plainText, Rating, type Review } from '@/entities/review';
 import { routes } from '@/shared/config/routes';
 import { buttonCss } from '@/shared/ui/Button';
 
@@ -101,9 +101,9 @@ export function FeaturedReview({ review }: { review: Review }) {
         </h2>
         <p css={metaCss}>
           <span>{review.year}</span>
-          <span>{review.genre}</span>
           <Rating value={review.rating} />
         </p>
+        <GenreTags genres={review.genres} css={{ marginBottom: 12 }} />
         <p css={excerptCss}>{plainText(review.body)}</p>
         <Link to={routes.review(review.id)} css={[buttonCss(), linkCss]}>
           리뷰 읽기<span css={{ position: 'absolute', clipPath: 'inset(50%)' }}>: {review.title}</span>

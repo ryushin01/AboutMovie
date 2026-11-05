@@ -26,7 +26,7 @@ describe('ReviewForm', () => {
 
     expect(screen.getByLabelText('영화 제목 (필수)')).toHaveFocus();
     expect(screen.getByText('오류: 포스터 이미지를 올려 주세요.')).toBeInTheDocument();
-    expect(screen.getByText('오류: 장르를 선택해 주세요.')).toBeInTheDocument();
+    expect(screen.getByText('오류: 장르를 하나 이상 선택해 주세요.')).toBeInTheDocument();
     expect(screen.getByText('오류: 리뷰 내용을 입력해 주세요.')).toBeInTheDocument();
     expect(onSaved).not.toHaveBeenCalled();
   });
@@ -39,13 +39,13 @@ describe('ReviewForm', () => {
 
     await user.upload(screen.getByLabelText('포스터 이미지 (필수)'), image('poster.png'));
     await screen.findByText('포스터 이미지를 넣었습니다.');
-    await user.selectOptions(screen.getByLabelText('장르 (필수)'), 'SF');
+    await user.click(screen.getByRole('checkbox', { name: 'SF' }));
     await user.click(screen.getByRole('button', { name: '저장' }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith('sample-1'));
     const put = state.calls.find((call) => call.method === 'PUT');
     expect(put?.path).toBe('/api/reviews/sample-1');
-    expect(put?.body).toMatchObject({ poster: '/api/images/uploaded.png', genre: 'SF' });
+    expect(put?.body).toMatchObject({ poster: '/api/images/uploaded.png', genres: ['드라마', 'SF'] });
     expect((put!.body as { body: RichDoc }).body.type).toBe('doc');
   });
 

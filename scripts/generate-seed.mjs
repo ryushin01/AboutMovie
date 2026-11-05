@@ -1,12 +1,13 @@
 // 가상의 영화 리뷰로 포스터·장면 SVG(public/seed)와 시드 마이그레이션을 만듭니다. 한 번 실행하고 결과를 커밋합니다.
-// 적용된 마이그레이션은 고칠 수 없으므로, 내용을 바꾸려면 새 마이그레이션을 추가합니다.
+// 적용된 마이그레이션은 고칠 수 없으므로, 내용을 바꾸려면 OUT을 새 파일로 바꿔 새 마이그레이션을 추가합니다.
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { NEW_FILMS, ORIGINAL_EXTRAS } from './seed-films.mjs';
 
-const OUT = 'netlify/database/migrations/20261105000100_seed_reviews.sql';
+const OUT = 'netlify/database/migrations/20261105000300_seed_more_reviews.sql';
 const NOTE = '이 글은 포트폴리오를 위해 지어낸 가상의 영화 리뷰입니다.';
 
-// [id, 제목, 연도, 평점, 장르, 포스터 시작색, 끝색, 작성일, 장면 설명, 문단1, 문단2]
-const FILMS = [
+// 처음 만든 16편: [id, 제목, 연도, 평점, 장르, 포스터 시작색, 끝색, 작성일, 장면 설명, 문단1, 문단2]
+const ORIGINAL_FILMS = [
   [
     'last-screening',
     '마지막 상영',
@@ -233,38 +234,75 @@ ${lines.map((line, i) => `<text x="44" y="${680 + i * (size + 8)}" font-family="
 `;
 }
 
-const sceneSvg = (from, to) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+// 본문 이미지가 여러 장이어도 서로 달라 보이도록 구도를 바꿉니다.
+const SCENE_SHAPES = [
+  `<circle cx="1120" cy="520" r="130" fill="#fff" opacity=".55"/>
+<rect y="620" width="1600" height="280" fill="#000" opacity=".45"/>`,
+  `<circle cx="380" cy="240" r="90" fill="#fff" opacity=".4"/>
+<path d="M0 900V560l420-200 380 230 340-170 460 240v240z" fill="#000" opacity=".5"/>`,
+  `<rect x="640" y="200" width="320" height="700" fill="#000" opacity=".35"/>
+<rect x="720" y="280" width="160" height="220" fill="#fff" opacity=".5"/>
+<rect y="780" width="1600" height="120" fill="#000" opacity=".5"/>`,
+];
+
+const sceneSvg = (from, to, index) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
 <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs>
 <rect width="1600" height="900" fill="url(#g)"/>
-<circle cx="1120" cy="520" r="130" fill="#fff" opacity=".55"/>
-<rect y="620" width="1600" height="280" fill="#000" opacity=".45"/>
+${SCENE_SHAPES[index]}
 </svg>
 `;
 
+const sceneName = (id, index) => `${id}-scene${index === 0 ? '' : `-${index + 1}`}.svg`;
 const paragraph = (text) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
 const sql = (text) => `'${text.replaceAll("'", "''")}'`;
+const sqlGenres = (genres) => `ARRAY[${genres.map(sql).join(', ')}]::text[]`;
+
+/** 글, 이미지, 글, 이미지 순서로 번갈아 놓고, 남은 문단을 뒤에 잇습니다. */
+function buildBody(id, paragraphs, alts) {
+  const content = paragraphs.flatMap((text, index) => [
+    paragraph(text),
+    ...(alts[index]
+      ? [{ type: 'image', attrs: { src: `/seed/${sceneName(id, index)}`, alt: alts[index] } }]
+      : []),
+  ]);
+  content.push({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: NOTE }] });
+  return { type: 'doc', content };
+}
+
+function writeImages({ id, title, from, to, alts }) {
+  writeFileSync(`public/seed/${id}-poster.svg`, posterSvg(title, from, to));
+  alts.forEach((_, index) => writeFileSync(`public/seed/${sceneName(id, index)}`, sceneSvg(from, to, index)));
+}
 
 mkdirSync('public/seed', { recursive: true });
-const rows = FILMS.map(([id, title, year, rating, genre, from, to, date, alt, first, second]) => {
-  writeFileSync(`public/seed/${id}-poster.svg`, posterSvg(title, from, to));
-  writeFileSync(`public/seed/${id}-scene.svg`, sceneSvg(from, to));
-  const body = {
-    type: 'doc',
-    content: [
-      paragraph(first),
-      { type: 'image', attrs: { src: `/seed/${id}-scene.svg`, alt } },
-      paragraph(second),
-      { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: NOTE }] },
-    ],
-  };
-  const at = `${date}T09:00:00Z`;
-  return `  (${[sql(`sample-${id}`), sql(title), year, rating, sql(genre), sql(`/seed/${id}-poster.svg`), `${sql(JSON.stringify(body))}::jsonb`, sql(at), sql(at)].join(', ')})`;
+
+const updates = ORIGINAL_FILMS.map(([id, title, , , , from, to, , alt, first, second]) => {
+  const { genres, alt: secondAlt, more } = ORIGINAL_EXTRAS[id];
+  const alts = [alt, secondAlt];
+  writeImages({ id, title, from, to, alts });
+  const body = buildBody(id, [first, second, ...more], alts);
+  return `UPDATE reviews SET genres = ${sqlGenres(genres)}, body = ${sql(JSON.stringify(body))}::jsonb WHERE id = ${sql(`sample-${id}`)};`;
 });
+
+// 처음 16편의 마지막 글(2026-07-15)부터 한 주씩 거슬러 올라갑니다.
+const FIRST_NEW_DATE = Date.UTC(2026, 6, 8, 9);
+const WEEK = 7 * 24 * 60 * 60 * 1000;
+
+const rows = NEW_FILMS.map(
+  ({ id, title, year, rating, genres, colors: [from, to], alts, paragraphs }, index) => {
+    writeImages({ id, title, from, to, alts });
+    const at = new Date(FIRST_NEW_DATE - index * WEEK).toISOString();
+    return `  (${[sql(`sample-${id}`), sql(title), year, rating, sqlGenres(genres), sql(`/seed/${id}-poster.svg`), `${sql(JSON.stringify(buildBody(id, paragraphs, alts)))}::jsonb`, sql(at), sql(at)].join(', ')})`;
+  },
+);
 
 writeFileSync(
   OUT,
   `-- scripts/generate-seed.mjs로 만든 가상의 리뷰입니다.
-INSERT INTO reviews (id, title, year, rating, genre, poster, body, created_at, updated_at) VALUES
+-- 처음 16편의 본문을 늘려 글과 이미지를 번갈아 놓고 장르를 더한 뒤, 20편을 새로 넣습니다.
+${updates.join('\n')}
+
+INSERT INTO reviews (id, title, year, rating, genres, poster, body, created_at, updated_at) VALUES
 ${rows.join(',\n')};
 `,
 );

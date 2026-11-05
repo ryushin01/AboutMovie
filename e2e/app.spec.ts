@@ -30,7 +30,8 @@ async function fillRequired(page: Page, title: string) {
   await page.getByLabel('영화 제목 (필수)').fill(title);
   await page.getByLabel('개봉 연도 (필수)').fill('2024');
   await page.getByLabel('평점 (필수)').selectOption('4');
-  await page.getByLabel('장르 (필수)').selectOption('드라마');
+  await page.getByRole('checkbox', { name: '드라마' }).check();
+  await page.getByRole('checkbox', { name: '가족' }).check();
   await page.getByLabel('포스터 이미지 (필수)').setInputFiles(image('poster.png'));
   await expect(page.getByAltText('선택한 포스터 미리보기')).toBeVisible();
   await editorOf(page).click();
@@ -40,6 +41,76 @@ async function fillRequired(page: Page, title: string) {
 test.beforeEach(async ({ page }, testInfo) => {
   // 새 컨텍스트를 직접 만드는 테스트는 아래에서 따로 설치합니다.
   if (!testInfo.title.includes('[컨텍스트]')) await installFakeApi(page);
+});
+
+test('글과 이미지를 번갈아 쓰면 상세 화면에 같은 순서로 나온다', async ({ page }) => {
+  // 실제 업로드처럼 시간이 걸려도 대화상자가 닫힌 뒤 초점이 편집기로 돌아와야 합니다.
+  await page.route('**/api/images', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await route.fallback();
+  });
+  const insertImage = async (name: string, alt: string) => {
+    await page.getByRole('button', { name: '이미지', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: '이미지 넣기' });
+    await dialog.getByLabel('이미지 파일 (필수)').setInputFiles(image(name));
+    await dialog.getByLabel('이미지 설명 (필수)').fill(alt);
+    await dialog.getByRole('button', { name: '넣기' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(editorOf(page).getByAltText(alt)).toBeVisible();
+    await expect(editorOf(page)).toBeFocused();
+  };
+
+  await page.goto('/reviews/new');
+  await fillRequired(page, '번갈아 쓰는 영화');
+  await insertImage('one.png', '첫째 그림');
+  // 이미지를 넣은 뒤 바로 입력해도 이미지가 지워지지 않고 아래 문단에 글이 들어갑니다.
+  await page.keyboard.type('둘째 문단');
+  await insertImage('two.png', '둘째 그림');
+  await page.keyboard.type('셋째 문단');
+  await page.getByRole('button', { name: '저장' }).click();
+
+  await expect(page.getByRole('heading', { level: 1, name: '번갈아 쓰는 영화' })).toBeVisible();
+  const blocks = page.locator('main article p:has-text("문단"), main article img[alt$="그림"]');
+  await expect(blocks).toHaveCount(5);
+  const order = await blocks.evaluateAll((elements) =>
+    elements.map((element) => element.getAttribute('alt') ?? element.textContent),
+  );
+  expect(order).toEqual(['첫 문단', '첫째 그림', '둘째 문단', '둘째 그림', '셋째 문단']);
+});
+
+test('문단 사이에 이미지를 끼워 넣으면 문단이 나뉜다', async ({ page }) => {
+  await page.goto('/reviews/new');
+  await fillRequired(page, '끼워 넣는 영화');
+  await page.keyboard.type(' 뒷부분');
+  for (let i = 0; i < 4; i += 1) await page.keyboard.press('ArrowLeft');
+  await page.getByRole('button', { name: '이미지', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '이미지 넣기' });
+  await dialog.getByLabel('이미지 파일 (필수)').setInputFiles(image('middle.png'));
+  await dialog.getByLabel('이미지 설명 (필수)').fill('가운데 그림');
+  await dialog.getByRole('button', { name: '넣기' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(editorOf(page)).toBeFocused();
+  await page.keyboard.type('이어서');
+  const nodes = await editorOf(page)
+    .locator(':scope > *')
+    .evaluateAll((elements) => elements.map((element) => element.getAttribute('alt') ?? element.textContent));
+  expect(nodes).toEqual(['첫 문단', '가운데 그림', '이어서 뒷부분']);
+});
+
+test('장르 태그로 그 장르의 리뷰 목록을 본다', async ({ page }) => {
+  await page.goto('/reviews/sample-glass-orbit');
+  await page.getByRole('main').getByRole('link', { name: '드라마', exact: true }).click();
+  await expect(page).toHaveTitle('드라마 리뷰 | AboutMovie');
+  await expect(page.getByRole('heading', { level: 1, name: '드라마 리뷰' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: '리뷰 3편' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '유리 궤도' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '네온 레인' })).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'TV 영화' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'TV 영화 리뷰' })).toBeVisible();
+  await expect(page.getByText('이 장르의 리뷰는 아직 없습니다.')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: 'TV 영화 리뷰' })).toBeVisible();
 });
 
 test('작성, 서식, 본문 이미지, 수정, 삭제 흐름', async ({ page }) => {
@@ -65,6 +136,7 @@ test('작성, 서식, 본문 이미지, 수정, 삭제 흐름', async ({ page })
   await page.getByRole('dialog').getByRole('button', { name: '적용' }).click();
   await expect(page.getByText('오류: http 또는 https 주소를 입력해 주세요.')).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: '취소' }).click();
+  await expect(editorOf(page)).toBeFocused();
 
   await page.getByRole('button', { name: '이미지', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '이미지 넣기' });
@@ -332,7 +404,7 @@ test('모든 컨트롤의 대각선 길이가 6mm 이상이다 [컨텍스트]', 
   const context = await browser.newContext({ baseURL, viewport: { width: 360, height: 740 } });
   const page = await context.newPage();
   await installFakeApi(page);
-  for (const path of ['/', '/reviews/sample-last-screening', '/reviews/new', '/login']) {
+  for (const path of ['/', '/reviews/sample-last-screening', '/genres/SF', '/reviews/new', '/login']) {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.locator('output:not(:empty)')).toHaveCount(0);
@@ -362,9 +434,11 @@ test('키보드만으로 리뷰를 작성하고 상세로 이동한다', async (
   await expect(page.getByLabel('평점 (필수)')).toBeFocused();
   await page.getByLabel('평점 (필수)').selectOption('4');
   await page.keyboard.press(tabKey(browserName));
-  await expect(page.getByLabel('장르 (필수)')).toBeFocused();
-  await page.getByLabel('장르 (필수)').selectOption('SF');
-  await page.keyboard.press(tabKey(browserName));
+  // 장르는 체크박스마다 Tab으로 들르고 스페이스로 고릅니다.
+  await expect(page.getByRole('checkbox', { name: '액션' })).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('checkbox', { name: '액션' })).toBeChecked();
+  for (let i = 0; i < 19; i += 1) await page.keyboard.press(tabKey(browserName));
 
   const chooser = page.waitForEvent('filechooser');
   await expect(page.getByLabel('포스터 이미지 (필수)')).toBeFocused();

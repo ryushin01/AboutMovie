@@ -20,7 +20,7 @@ describe('ReviewEditPage', () => {
     renderAt('/reviews/sample-1/edit');
     expect(await screen.findByLabelText('영화 제목 (필수)')).toHaveValue('마지막 상영');
     expect(screen.getByLabelText('평점 (필수)')).toHaveValue('5');
-    expect(screen.getByLabelText('장르 (필수)')).toHaveValue('드라마');
+    expect(screen.getByRole('checkbox', { name: '드라마' })).toBeChecked();
     expect(screen.getByRole('link', { name: '취소' })).toHaveAttribute('href', '/reviews/sample-1');
   });
 

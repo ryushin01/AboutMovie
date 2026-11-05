@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { Rating, RichText, useReview } from '@/entities/review';
+import { GenreTags, Rating, RichText, useReview } from '@/entities/review';
 import { useSession } from '@/entities/session';
 import { DeleteReviewButton } from '@/features/delete-review';
 import { routes } from '@/shared/config/routes';
@@ -53,8 +53,11 @@ const metaCss = css`
   display: flex;
   flex-wrap: wrap;
   gap: 8px 24px;
-  margin: 0 0 32px;
+  margin: 0 0 16px;
   color: var(--muted);
+`;
+const tagsCss = css`
+  margin-bottom: 32px;
 `;
 const actionsCss = css`
   display: flex;
@@ -93,10 +96,10 @@ export function ReviewDetailPage() {
         <div css={articleCss}>
           <p css={metaCss}>
             <span>{review.year}년 개봉</span>
-            <span>{review.genre}</span>
             <Rating value={review.rating} />
             <time dateTime={review.createdAt}>{formatDate(review.createdAt)} 작성</time>
           </p>
+          <GenreTags genres={review.genres} css={tagsCss} />
           <RichText doc={review.body} />
           {isCritic && (
             <div css={actionsCss}>

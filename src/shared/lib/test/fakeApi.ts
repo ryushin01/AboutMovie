@@ -7,7 +7,7 @@ export const sampleReview = (patch: Partial<Row> = {}): Row => ({
   title: '마지막 상영',
   year: 2025,
   rating: 5,
-  genre: '드라마',
+  genres: ['드라마'],
   poster: '/seed/a-poster.svg',
   body: {
     type: 'doc',

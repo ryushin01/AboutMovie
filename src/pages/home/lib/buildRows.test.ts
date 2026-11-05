@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { Review } from '@/entities/review';
 import { buildRows } from './buildRows';
 
-const review = (id: string, rating: number, genre: Review['genre']): Review => ({
+const review = (id: string, rating: number, ...genres: Review['genres']): Review => ({
   id,
   title: id,
   year: 2025,
   rating,
-  genre,
+  genres,
   poster: '/seed/a.svg',
   body: { type: 'doc' },
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -20,6 +20,11 @@ describe('buildRows', () => {
     expect(rows.map((row) => row.title)).toEqual(['최신 리뷰', '평론가 추천', '드라마', 'SF']);
     expect(rows[1].reviews.map((r) => r.id)).toEqual(['b', 'c']);
     expect(rows[2].reviews.map((r) => r.id)).toEqual(['a', 'c']);
+  });
+
+  it('장르가 여럿인 글은 각 장르 줄에 모두 나온다', () => {
+    const rows = buildRows([review('a', 3, '드라마', 'SF')]);
+    expect(rows.map((row) => row.title)).toEqual(['최신 리뷰', '드라마', 'SF']);
   });
 
   it('추천할 글이 없으면 추천 줄도 뺀다', () => {

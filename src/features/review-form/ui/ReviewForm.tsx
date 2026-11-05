@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/react';
 import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { Link } from 'react-router';
-import { GENRES, uploadImage, useSaveReview, type Review } from '@/entities/review';
+import { uploadImage, useSaveReview, type Review } from '@/entities/review';
 import { ApiError } from '@/shared/api/request';
 import { readImageFile, SCENE_MAX_EDGE } from '@/shared/lib/readImageFile';
 import { Button, buttonCss } from '@/shared/ui/Button';
@@ -19,6 +19,7 @@ import {
 } from '../model/draft';
 import { useImageUpload } from '../model/useImageUpload';
 import { useLeaveGuard } from '../model/useLeaveGuard';
+import { GenreField } from './GenreField';
 import { PosterField } from './PosterField';
 
 // 편집기는 무거우므로 글을 쓸 때만 받습니다.
@@ -154,27 +155,16 @@ export function ReviewForm({ review, cancelTo, onSaved }: Props) {
           </Field>
         </div>
 
-        <Field label="장르" required error={errors.genre}>
-          {(control) => (
-            <select
-              {...control}
-              css={inputCss}
-              value={draft.genre}
-              onChange={(e) => change({ genre: e.target.value })}
-            >
-              <option value="">선택해 주세요</option>
-              {GENRES.map((genre) => (
-                <option key={genre} value={genre}>
-                  {genre}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
+        <GenreField value={draft.genres} error={errors.genres} onChange={(genres) => change({ genres })} />
 
         <PosterField poster={draft.poster} error={errors.poster} onChange={handlePoster} />
 
-        <Field label="리뷰 내용" required error={errors.body}>
+        <Field
+          label="리뷰 내용"
+          required
+          hint="이미지는 커서가 있는 자리에 들어갑니다. 글과 이미지를 번갈아 넣을 수 있습니다."
+          error={errors.body}
+        >
           {(control, labelId) => (
             <Suspense fallback={<output css={{ display: 'block' }}>편집기를 불러오는 중입니다.</output>}>
               <RichEditor

@@ -1,8 +1,10 @@
 import { css } from '@emotion/react';
 import Image from '@tiptap/extension-image';
-import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react';
+import { NodeSelection, TextSelection } from '@tiptap/pm/state';
+import { EditorContent, useEditor, useEditorState, type CommandProps, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useState, type KeyboardEvent, type RefObject } from 'react';
+import { flushSync } from 'react-dom';
 import { isSafeLink, type RichDoc } from '@/entities/review';
 import { Field } from '@/shared/ui/Field';
 import { inputCss } from '@/shared/ui/styles';
@@ -89,6 +91,18 @@ const contentCss = css`
 `;
 
 const isAllowedUri = (url: string) => isSafeLink(url);
+
+/**
+ * 이미지를 넣으면 이미지 자체가 선택되어, 그대로 입력하면 이미지가 지워집니다.
+ * 커서를 바로 아래 문단으로 옮겨 글, 이미지, 글, 이미지 순서로 이어 쓸 수 있게 합니다.
+ */
+function moveCursorBelowImage({ tr, state }: CommandProps) {
+  if (!(tr.selection instanceof NodeSelection)) return true;
+  const after = tr.selection.to;
+  if (!tr.doc.resolve(after).nodeAfter?.isTextblock) tr.insert(after, state.schema.nodes.paragraph.create());
+  tr.setSelection(TextSelection.create(tr.doc, after + 1));
+  return true;
+}
 
 const extensions = [
   StarterKit.configure({
@@ -234,16 +248,22 @@ export default function RichEditor({
     }),
   });
 
+  // 모달이 열려 있는 동안에는 편집기가 초점을 받지 못하고, 닫을 때 초점을 잃습니다. 먼저 닫고 돌려줍니다.
+  const closeDialog = () => {
+    flushSync(() => setDialog(null));
+    editor.view.focus();
+  };
+
   const applyLink = (href: string) => {
-    setDialog(null);
+    closeDialog();
     const chain = editor.chain().focus().extendMarkRange('link');
     if (href) chain.setLink({ href }).run();
     else chain.unsetLink().run();
   };
 
   const insertImage = ({ src, alt }: ImageValue) => {
-    setDialog(null);
-    editor.chain().focus().setImage({ src, alt }).run();
+    closeDialog();
+    editor.chain().setImage({ src, alt }).command(moveCursorBelowImage).run();
   };
 
   return (
@@ -290,11 +310,11 @@ export default function RichEditor({
         <LinkDialog
           initial={String(editor.getAttributes('link').href ?? '')}
           onApply={applyLink}
-          onClose={() => setDialog(null)}
+          onClose={closeDialog}
         />
       )}
       {dialog === 'image' && (
-        <ImageDialogFields onUpload={onUploadImage} onInsert={insertImage} onClose={() => setDialog(null)} />
+        <ImageDialogFields onUpload={onUploadImage} onInsert={insertImage} onClose={closeDialog} />
       )}
     </div>
   );

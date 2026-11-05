@@ -11,13 +11,14 @@
 | 이미지 | 브라우저에서 줄인 뒤 base64 JSON으로 업로드 | 함수 요청 본문 한도가 6MB입니다. 로컬 에뮬레이터가 바이너리 본문을 깨뜨려(70바이트 PNG가 15바이트로 도착) 로컬과 운영이 같은 경로를 타도록 JSON을 씁니다. 서버는 파일 내용으로 형식을 판단하고 SVG는 받지 않습니다. |
 | 이미지 저장소 | 운영과 미리보기 분리 | 사이트 단위 Blobs는 모든 배포가 함께 쓰므로, 미리보기는 별도 저장소에 쓰고 읽을 때만 운영 저장소로 넘어갑니다. |
 | SQL | `pg` 쿼리 직접 작성 | 표가 하나뿐이고, Drizzle은 Netlify 어댑터가 베타 버전에만 있습니다. |
+| 장르 | TMDB 공식 장르 19개, `TEXT[]` | 목록을 추측하지 않으려고 [TMDB 문서](https://developer.themoviedb.org/reference/genre-movie-list)를 따르고 이름은 한국어로 옮겼습니다. 리뷰 한 편이 여러 장르에 속하고 표가 하나뿐이라 배열로 저장합니다. |
 | 데이터 요청 | TanStack Query | 로딩·오류 상태와 저장 후 갱신을 한곳에서 처리합니다. |
 | 가로 목록 | CSS `grid-auto-columns`와 scroll snap | 화면 폭별 카드 수(2.3~8.3)를 CSS만으로 정합니다. 소수점만큼 다음 카드가 보여 옆으로 더 있음을 알립니다. 카드는 링크라 Tab으로 넘어가면 브라우저가 스크롤합니다. |
 | 테마 | CSS 변수와 `data-theme` | `index.html`의 인라인 스크립트가 렌더링 전에 테마를 정해 깜빡임을 막습니다. |
 | ID | 서버의 `crypto.randomUUID` | 글과 이미지의 ID를 서버에서 만듭니다. |
 | 린트 | oxlint | `typescript-eslint`가 TypeScript 7을 지원하지 않습니다. FSD 계층과 공개 API 규칙은 `no-restricted-imports`로 검사합니다. |
 | esbuild 빌드 스크립트 | 실행하지 않음 (`pnpm-workspace.yaml`) | 없어도 빌드와 테스트가 동작합니다. 승인 여부를 정하지 않으면 `pnpm install`이 실패합니다. |
-| 샘플 데이터 | 가상의 영화와 코드로 그린 SVG, 시드 마이그레이션 | 실제 영화 이미지의 저작권 문제를 피합니다. `scripts/generate-seed.mjs`로 만듭니다. |
+| 샘플 데이터 | 가상의 영화와 코드로 그린 SVG, 시드 마이그레이션 | 실제 영화 이미지의 저작권 문제를 피합니다. `scripts/generate-seed.mjs`와 원고 `scripts/seed-films.mjs`로 만듭니다. |
 
 이미지 축소는 다음 규칙을 따릅니다.
 
@@ -30,7 +31,7 @@
 |---|---|---|
 | 단위·컴포넌트 | `src/**/*.test.ts(x)` | 입력 검증, 본문 허용 목록, 권한별 화면, 로그인·초대 흐름, 저장·불러오기 실패. API는 `shared/lib/test/fakeApi.ts`로 대신합니다. |
 | 서버 | `netlify/lib/*.test.ts` | 실제 Postgres에 마이그레이션을 적용한 저장소와 시드, 입력 검증, 이미지 형식 판별 |
-| E2E | `e2e/app.spec.ts` | Chromium, Firefox, WebKit에서 프로덕션 빌드의 작성·서식·본문 이미지·수정·삭제, 방문자 권한, 화면 폭별 카드 수, 줄 넘기기, 중복 제출, 이탈 확인, 이미지 축소, 테마, 키보드, 컨트롤 크기, 폭 320·1440·2200px의 넘침과 axe 검사. `vite preview`에 함수가 없어 API는 `e2e/fakeApi.ts`로 대신합니다. |
+| E2E | `e2e/app.spec.ts` | Chromium, Firefox, WebKit에서 프로덕션 빌드의 작성·서식·본문 이미지·글과 이미지 번갈아 쓰기·장르 목록·수정·삭제, 방문자 권한, 화면 폭별 카드 수, 줄 넘기기, 중복 제출, 이탈 확인, 이미지 축소, 테마, 키보드, 컨트롤 크기, 폭 320·1440·2200px의 넘침과 axe 검사. `vite preview`에 함수가 없어 API는 `e2e/fakeApi.ts`로 대신합니다. |
 | 배포 검사 | `e2e/live.spec.ts` | 배포된 사이트의 읽기, 이미지, axe, 비로그인·다른 사이트의 쓰기 거부. 운영 데이터를 바꾸지 않습니다. |
 
 ```bash

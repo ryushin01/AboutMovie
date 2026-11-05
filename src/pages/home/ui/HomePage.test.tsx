@@ -7,7 +7,7 @@ import { HomePage } from './HomePage';
 describe('HomePage', () => {
   it('대표 리뷰와 장르별 줄을 보여 준다', async () => {
     installFakeApi({
-      reviews: [sampleReview(), sampleReview({ id: 'b', title: '유리 궤도', genre: 'SF', rating: 3 })],
+      reviews: [sampleReview(), sampleReview({ id: 'b', title: '유리 궤도', genres: ['SF'], rating: 3 })],
     });
     renderWithProviders(<HomePage />);
 

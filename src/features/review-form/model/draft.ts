@@ -1,10 +1,17 @@
-import { emptyDoc, isEmptyDoc, type Review, type ReviewInput, type RichDoc } from '@/entities/review';
+import {
+  emptyDoc,
+  isEmptyDoc,
+  type Genre,
+  type Review,
+  type ReviewInput,
+  type RichDoc,
+} from '@/entities/review';
 
 export interface Draft {
   title: string;
   year: string;
   rating: string;
-  genre: string;
+  genres: Genre[];
   poster: string;
   body: RichDoc;
 }
@@ -13,7 +20,7 @@ export interface DraftErrors {
   title?: string;
   year?: string;
   rating?: string;
-  genre?: string;
+  genres?: string;
   poster?: string;
   body?: string;
 }
@@ -24,7 +31,7 @@ export const toDraft = (review?: Review): Draft => ({
   title: review?.title ?? '',
   year: review ? String(review.year) : '',
   rating: review ? String(review.rating) : '',
-  genre: review?.genre ?? '',
+  genres: review?.genres ?? [],
   poster: review?.poster ?? '',
   body: review?.body ?? emptyDoc(),
 });
@@ -42,7 +49,7 @@ export function validateDraft(draft: Draft): DraftErrors {
     errors.year = `개봉 연도를 ${MIN_YEAR}~${maxYear} 사이의 숫자로 입력해 주세요.`;
   }
   if (!draft.rating) errors.rating = '평점을 선택해 주세요.';
-  if (!draft.genre) errors.genre = '장르를 선택해 주세요.';
+  if (draft.genres.length === 0) errors.genres = '장르를 하나 이상 선택해 주세요.';
   if (!draft.poster) errors.poster = '포스터 이미지를 올려 주세요.';
   if (isEmptyDoc(draft.body)) errors.body = '리뷰 내용을 입력해 주세요.';
 
@@ -54,7 +61,7 @@ export const toReviewInput = (draft: Draft, id?: string): ReviewInput => ({
   title: draft.title.trim(),
   year: Number(draft.year),
   rating: Number(draft.rating),
-  genre: draft.genre as ReviewInput['genre'],
+  genres: draft.genres,
   poster: draft.poster,
   body: draft.body,
 });

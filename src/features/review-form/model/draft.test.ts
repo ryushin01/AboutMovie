@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { RichDoc } from '@/entities/review';
-import { isDraftChanged, toDraft, toReviewInput, validateDraft } from './draft';
+import { isDraftChanged, toDraft, toReviewInput, validateDraft, type Draft } from './draft';
 
 const body: RichDoc = {
   type: 'doc',
   content: [{ type: 'paragraph', content: [{ type: 'text', text: '본문' }] }],
 };
-const valid = {
+const valid: Draft = {
   ...toDraft(),
   title: ' 영화 ',
   year: '2024',
   rating: '4',
-  genre: '드라마',
+  genres: ['드라마'],
   poster: '/seed/a.svg',
   body,
 };
@@ -26,7 +26,7 @@ describe('validateDraft', () => {
       'title',
       'year',
       'rating',
-      'genre',
+      'genres',
       'poster',
       'body',
     ]);
@@ -46,7 +46,7 @@ describe('validateDraft', () => {
 });
 
 it('toReviewInput은 숫자로 바꾸고 공백을 정리한다', () => {
-  expect(toReviewInput(valid)).toMatchObject({ title: '영화', year: 2024, rating: 4, genre: '드라마' });
+  expect(toReviewInput(valid)).toMatchObject({ title: '영화', year: 2024, rating: 4, genres: ['드라마'] });
 });
 
 describe('isDraftChanged', () => {
@@ -55,7 +55,7 @@ describe('isDraftChanged', () => {
   });
 
   it('입력이나 본문이 바뀌면 true', () => {
-    expect(isDraftChanged(valid, { ...valid, genre: 'SF' })).toBe(true);
+    expect(isDraftChanged(valid, { ...valid, genres: ['SF'] })).toBe(true);
     expect(isDraftChanged(valid, { ...valid, body: { type: 'doc', content: [] } })).toBe(true);
   });
 });

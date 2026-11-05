@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { createBrowserRouter, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router';
+import { GenrePage } from '@/pages/genre';
 import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
@@ -36,6 +37,7 @@ export const router = createBrowserRouter(
           children: [
             { path: '/', element: <HomePage /> },
             { path: '/login', element: <LoginPage /> },
+            { path: '/genres/:genre', element: <GenrePage /> },
             { path: '/reviews/new', element: <ReviewNewPage /> },
             { path: '/reviews/:id', element: <ReviewDetailPage /> },
             { path: '/reviews/:id/edit', element: <ReviewEditPage /> },

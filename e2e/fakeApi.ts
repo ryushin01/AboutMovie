@@ -7,19 +7,19 @@ export interface FakeReview {
   title: string;
   year: number;
   rating: number;
-  genre: string;
+  genres: string[];
   poster: string;
   body: unknown;
   createdAt: string;
   updatedAt: string;
 }
 
-const FILMS: [string, string, number, string][] = [
+const FILMS: [string, string, number, string, ...string[]][] = [
   ['last-screening', '마지막 상영', 5, '드라마'],
   ['winter-route', '겨울의 항로', 4, '드라마'],
   ['neon-rain', '네온 레인', 3, '스릴러'],
   ['silent-floor', '조용한 층', 4, '스릴러'],
-  ['glass-orbit', '유리 궤도', 5, 'SF'],
+  ['glass-orbit', '유리 궤도', 5, 'SF', '드라마'],
   ['second-sun', '두 번째 태양', 3, 'SF'],
   ['spring-letter', '봄의 답장', 4, '로맨스'],
   ['midnight-bakery', '자정의 빵집', 3, '로맨스'],
@@ -34,14 +34,14 @@ const FILMS: [string, string, number, string][] = [
 ];
 
 export const seedReviews = (): FakeReview[] =>
-  FILMS.map(([id, title, rating, genre], index) => {
+  FILMS.map(([id, title, rating, genre, ...more], index) => {
     const at = new Date(Date.UTC(2026, 9, 28 - index, 9)).toISOString();
     return {
       id: `sample-${id}`,
       title,
       year: 2025,
       rating,
-      genre,
+      genres: [genre, ...more],
       poster: `/seed/${id}-poster.svg`,
       body: {
         type: 'doc',
@@ -54,6 +54,11 @@ export const seedReviews = (): FakeReview[] =>
           {
             type: 'paragraph',
             content: [{ type: 'text', text: '결말은 호불호가 갈리겠지만 볼 가치가 충분하다.' }],
+          },
+          { type: 'image', attrs: { src: `/seed/${id}-scene-2.svg`, alt: `${title}의 다른 장면` } },
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: '다시 보면 처음에 놓친 것들이 보인다.' }],
           },
         ],
       },
