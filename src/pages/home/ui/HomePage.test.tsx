@@ -1,30 +1,40 @@
 import { screen } from '@testing-library/react';
-import { entries } from 'idb-keyval';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { installFakeApi, sampleReview } from '@/shared/lib/test/fakeApi';
 import { renderWithProviders } from '@/shared/lib/test/renderWithProviders';
 import { HomePage } from './HomePage';
 
-vi.mock('idb-keyval', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('idb-keyval')>();
-  return { ...actual, entries: vi.fn(actual.entries) };
-});
-
 describe('HomePage', () => {
-  it('리뷰 목록과 개수를 보여 준다', async () => {
+  it('대표 리뷰와 장르별 줄을 보여 준다', async () => {
+    installFakeApi({
+      reviews: [sampleReview(), sampleReview({ id: 'b', title: '유리 궤도', genres: ['SF'], rating: 3 })],
+    });
     renderWithProviders(<HomePage />);
-    expect(await screen.findByRole('link', { name: '마지막 상영' })).toBeInTheDocument();
-    expect(screen.getByText('리뷰 3편')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ABOUT MOVIE');
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('ABOUT MOVIE');
+    expect(screen.getByRole('heading', { level: 2, name: '마지막 상영' })).toBeInTheDocument();
+    for (const row of ['최신 리뷰', '평론가 추천', '드라마', 'SF']) {
+      expect(screen.getByRole('heading', { level: 2, name: row })).toBeInTheDocument();
+    }
+    expect(screen.getAllByRole('link', { name: '유리 궤도' })[0]).toHaveAttribute('href', '/reviews/b');
   });
 
-  it('리뷰가 없으면 작성으로 안내한다', async () => {
-    vi.mocked(entries).mockResolvedValueOnce([]);
+  it('리뷰가 없으면 방문자에게는 안내만 보여 준다', async () => {
+    installFakeApi({ reviews: [], isCritic: false });
+    renderWithProviders(<HomePage />);
+    expect(await screen.findByText('아직 공개된 리뷰가 없습니다.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '첫 리뷰 쓰기' })).not.toBeInTheDocument();
+  });
+
+  it('리뷰가 없으면 운영자에게는 작성으로 안내한다', async () => {
+    installFakeApi({ reviews: [] });
     renderWithProviders(<HomePage />);
     expect(await screen.findByRole('link', { name: '첫 리뷰 쓰기' })).toHaveAttribute('href', '/reviews/new');
   });
 
   it('불러오지 못하면 알린다', async () => {
-    vi.mocked(entries).mockRejectedValueOnce(new Error('fail'));
+    const { state } = installFakeApi();
+    state.fail = (_method, path) => path === '/api/reviews';
     renderWithProviders(<HomePage />);
     expect(await screen.findByRole('alert')).toHaveTextContent('불러오지 못했습니다');
   });

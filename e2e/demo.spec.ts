@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import gifenc from 'gifenc';
 import { PNG } from 'pngjs';
+import { installFakeApi } from './fakeApi';
 
 // README 시연 GIF를 만듭니다. `pnpm demo-gif`로 실행합니다.
 test.skip(!process.env.DEMO, 'DEMO=1일 때만 실행합니다.');
@@ -20,6 +21,7 @@ test('시연 GIF 만들기', async ({ browser, baseURL }) => {
     reducedMotion: 'reduce',
   });
   const page = await context.newPage();
+  await installFakeApi(page);
   const gif = GIFEncoder();
 
   /** 지금 화면을 delay(ms) 동안 보여 주는 프레임으로 넣습니다. */
@@ -55,53 +57,69 @@ test('시연 GIF 만들기', async ({ browser, baseURL }) => {
   };
 
   await page.goto('/');
-  await expect(page.getByRole('link', { name: '마지막 상영' })).toBeVisible();
-  await shot(1600);
+  await expect(page.getByRole('heading', { level: 2, name: '최신 리뷰' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await shot(1800);
+  await page.getByRole('button', { name: '최신 리뷰 다음 목록' }).click();
+  await page.waitForTimeout(300);
+  await shot(1200);
   await page.mouse.wheel(0, 420);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
-  await shot(1200);
+  await page.waitForLoadState('networkidle');
+  await shot(1400);
 
   await page.getByRole('link', { name: '리뷰 쓰기' }).click();
   await expect(page.getByRole('heading', { name: '리뷰 쓰기' })).toBeVisible();
   await page.getByLabel('영화 제목 (필수)').fill('새벽의 활주로');
   await page.getByLabel('개봉 연도 (필수)').fill('2026');
   await page.getByLabel('평점 (필수)').selectOption('5');
-  await shot(1200);
-
+  await page.getByRole('checkbox', { name: '드라마' }).check();
   await page
     .getByLabel('포스터 이미지 (필수)')
     .setInputFiles(await image('poster.jpg', 1200, 1800, '#2b6e4f', '#0b1f18'));
   await page.getByAltText('선택한 포스터 미리보기').scrollIntoViewIfNeeded();
   await expect(page.getByAltText('선택한 포스터 미리보기')).toBeVisible();
-  await shot(1200);
-
-  await page
-    .getByLabel('리뷰 내용 (필수)')
-    .fill('동이 트는 활주로에서 시작해 끝까지 조용히 숨을 고르는 영화.');
-  await page
-    .getByLabel('영화 속 장면 이미지')
-    .setInputFiles(await image('scene.jpg', 1920, 1080, '#d98b2e', '#1a2a3a'));
-  await page.getByLabel('장면 1 설명 (필수)').fill('동이 트는 활주로 위로 해가 뜨는 풍경');
-  await page.getByLabel('장면 1 설명 (필수)').scrollIntoViewIfNeeded();
   await shot(1400);
+
+  const editor = page.getByRole('textbox', { name: '리뷰 내용 (필수)' });
+  await page.getByRole('button', { name: '제목', exact: true }).click();
+  await expect(editor).toBeFocused();
+  await page.keyboard.type('조용히 숨을 고르는 영화');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('동이 트는 활주로에서 시작해 ');
+  await page.getByRole('button', { name: '굵게' }).click();
+  await expect(editor).toBeFocused();
+  await page.keyboard.type('끝까지 흔들리지 않는다.');
+  await page.getByRole('button', { name: '굵게' }).click();
+  await expect(editor).toBeFocused();
+  await editor.scrollIntoViewIfNeeded();
+  await shot(1600);
+
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: '이미지', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '이미지 넣기' });
+  await dialog
+    .getByLabel('이미지 파일 (필수)')
+    .setInputFiles(await image('scene.jpg', 1920, 1080, '#d98b2e', '#1a2a3a'));
+  await dialog.getByLabel('이미지 설명 (필수)').fill('동이 트는 활주로 위로 해가 뜨는 풍경');
+  await shot(1400);
+  await dialog.getByRole('button', { name: '넣기' }).click();
+  await expect(editor.getByAltText('동이 트는 활주로 위로 해가 뜨는 풍경')).toBeVisible();
+  await shot(1200);
 
   await page.getByRole('button', { name: '저장' }).click();
   await expect(page.getByRole('heading', { level: 1, name: '새벽의 활주로' })).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 0));
   await shot(1600);
-  await page.getByAltText('동이 트는 활주로 위로 해가 뜨는 풍경').scrollIntoViewIfNeeded();
-  await shot(1200);
 
-  await page.evaluate(() => window.scrollTo(0, 0));
   await page.getByRole('button', { name: '다크 모드' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await shot(1400);
 
   await page.getByRole('link', { name: 'AboutMovie' }).click();
-  await expect(page.getByRole('link', { name: '새벽의 활주로' })).toBeVisible();
-  await page.mouse.wheel(0, 420);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
-  await shot(2200);
+  await expect(page.getByRole('heading', { level: 2, name: '새벽의 활주로' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await shot(2400);
 
   gif.finish();
   writeFileSync('docs/images/demo.gif', gif.bytes());

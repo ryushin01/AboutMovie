@@ -1,12 +1,11 @@
 import { css } from '@emotion/react';
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { useSyncReviewsAcrossTabs } from '@/entities/review';
+import { useSession } from '@/entities/session';
+import { LogoutButton } from '@/features/logout';
 import { ThemeToggle } from '@/features/toggle-theme';
 import { routes } from '@/shared/config/routes';
 import { buttonCss } from '@/shared/ui/Button';
-
-const gutter = 'clamp(16px, 3vw, 48px)';
 
 const skipCss = css`
   position: absolute;
@@ -27,7 +26,7 @@ const headerCss = css`
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px ${gutter};
+  padding: 16px var(--gutter);
   border-bottom: 1px solid var(--ink);
 `;
 const logoCss = css`
@@ -45,7 +44,7 @@ const navCss = css`
 const mainCss = css`
   /* 내용이 늦게 그려져도 바닥글이 밀려 내려가지 않게 합니다. */
   min-height: 100svh;
-  padding-inline: ${gutter};
+  padding-inline: var(--gutter);
   padding-bottom: 96px;
 
   /* 키보드 사용자에게만 표시되며, 화면 가장자리에서 잘리지 않게 안쪽에 그립니다. */
@@ -54,13 +53,13 @@ const mainCss = css`
   }
 `;
 const footerCss = css`
-  padding: 24px ${gutter};
+  padding: 24px var(--gutter);
   color: var(--muted);
   border-top: 1px solid var(--ink);
 `;
 
 export function SiteLayout() {
-  useSyncReviewsAcrossTabs();
+  const { isCritic } = useSession();
   const { pathname } = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(pathname);
@@ -82,9 +81,14 @@ export function SiteLayout() {
           AboutMovie
         </Link>
         <nav aria-label="주요 메뉴" css={navCss}>
-          <NavLink to={routes.newReview} css={buttonCss()}>
-            리뷰 쓰기
-          </NavLink>
+          {isCritic && (
+            <>
+              <NavLink to={routes.newReview} css={buttonCss()}>
+                리뷰 쓰기
+              </NavLink>
+              <LogoutButton />
+            </>
+          )}
           <ThemeToggle />
         </nav>
       </header>
@@ -92,7 +96,13 @@ export function SiteLayout() {
         <Outlet />
       </main>
       <footer css={footerCss}>
-        <small>AboutMovie · 포트폴리오용 데모입니다. 리뷰는 이 브라우저에만 저장됩니다.</small>
+        <small>AboutMovie · 포트폴리오 프로젝트입니다. 영화와 리뷰는 모두 가상입니다.</small>
+        {!isCritic && (
+          <small>
+            {' '}
+            · <Link to={routes.login}>운영자 로그인</Link>
+          </small>
+        )}
       </footer>
     </>
   );

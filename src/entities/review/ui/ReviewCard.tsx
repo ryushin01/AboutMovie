@@ -8,8 +8,10 @@ const cardCss = css`
   position: relative;
   margin: 0;
 
-  &:hover img {
-    transform: scale(1.04);
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover img {
+      transform: scale(1.05);
+    }
   }
   &:hover a,
   &:focus-within a {
@@ -20,6 +22,7 @@ const frameCss = css`
   overflow: hidden;
   aspect-ratio: 2 / 3;
   background: var(--surface);
+  border-radius: 4px;
 
   img {
     display: block;
@@ -27,17 +30,18 @@ const frameCss = css`
     height: 100%;
     /* 2:3 틀은 유지하되, 비율이 다른 포스터도 잘리지 않게 보여 줍니다. */
     object-fit: contain;
-    transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition: transform 0.3s ease;
   }
 `;
 const titleCss = css`
-  margin: 16px 0 8px;
-  font-size: clamp(1.5rem, 3vw, 2.5rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 10px 0 2px;
+  font-size: clamp(0.9375rem, 1.1vw, 1.0625rem);
+  font-weight: 700;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   a {
     color: inherit;
@@ -52,21 +56,23 @@ const titleCss = css`
 `;
 const metaCss = css`
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 12px;
+  gap: 0 8px;
   margin: 0;
   color: var(--muted);
+  font-size: 0.8125rem;
 `;
 
 export function ReviewCard({ review }: { review: Review }) {
   return (
     <article css={cardCss}>
       <div css={frameCss}>
-        <img src={review.poster} alt={`${review.title} 포스터`} />
+        <img src={review.poster} alt={`${review.title} 포스터`} loading="lazy" />
       </div>
-      <h2 css={titleCss}>
+      <h3 css={titleCss}>
         <Link to={routes.review(review.id)}>{review.title}</Link>
-      </h2>
+      </h3>
       <p css={metaCss}>
         <span>{review.year}</span>
         <Rating value={review.rating} />

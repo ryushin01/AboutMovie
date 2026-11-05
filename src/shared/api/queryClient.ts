@@ -1,10 +1,9 @@
 import { QueryClient } from '@tanstack/react-query';
 
-// 저장소가 브라우저 안에 있으므로 네트워크 상태와 무관하게 동작합니다.
+// 첫 요청은 함수와 DB가 깨어나는 동안 실패할 수 있어 한 번 더 시도합니다.
 export const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {
-      queries: { networkMode: 'always', retry: false, refetchOnWindowFocus: false },
-      mutations: { networkMode: 'always' },
+      queries: { retry: 1, retryDelay: 300, refetchOnWindowFocus: false },
     },
   });

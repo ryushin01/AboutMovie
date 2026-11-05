@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { installFakeApi } from './fakeApi';
 
 // README 스크린샷을 만듭니다. `pnpm screenshots`로 실행합니다.
 test.skip(!process.env.SCREENSHOTS, 'SCREENSHOTS=1일 때만 실행합니다.');
@@ -12,8 +13,10 @@ test('화면 캡처', async ({ browser, baseURL }) => {
     colorScheme: 'dark',
   });
   const page = await desktop.newPage();
+  await installFakeApi(page);
   await page.goto('/');
-  await expect(page.getByRole('link', { name: '마지막 상영' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: '최신 리뷰' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
   await page.screenshot(shot('home-dark'));
 
   await page.setViewportSize({ width: 1200, height: 630 });
@@ -31,11 +34,17 @@ test('화면 캡처', async ({ browser, baseURL }) => {
     colorScheme: 'light',
   });
   const lightPage = await light.newPage();
+  await installFakeApi(lightPage);
   await lightPage.goto('/');
-  await expect(lightPage.getByRole('link', { name: '마지막 상영' })).toBeVisible();
+  await expect(lightPage.getByRole('heading', { level: 2, name: '최신 리뷰' })).toBeVisible();
+  await lightPage.waitForLoadState('networkidle');
   await lightPage.screenshot(shot('home-light'));
 
   await lightPage.goto('/reviews/new');
+  const toolbar = lightPage.getByRole('toolbar', { name: '글 서식' });
+  await expect(toolbar).toBeVisible();
+  // 입력 칸 일부와 편집기가 함께 보이게 내립니다.
+  await lightPage.evaluate(() => window.scrollTo(0, 560));
   await lightPage.screenshot(shot('write-light'));
   await light.close();
 });
