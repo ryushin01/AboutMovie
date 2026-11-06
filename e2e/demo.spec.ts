@@ -112,7 +112,7 @@ test('시연 GIF 만들기', async ({ browser, baseURL }) => {
   await page.evaluate(() => window.scrollTo(0, 0));
   await shot(1600);
 
-  await page.getByRole('button', { name: '다크 모드' }).click();
+  await page.getByRole('button', { name: '라이트 모드' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await shot(1400);
 

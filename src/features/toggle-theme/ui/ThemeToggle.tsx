@@ -19,11 +19,8 @@ export function ThemeToggle() {
   };
 
   return (
-    <Button variant="outline" aria-pressed={dark} onClick={toggle}>
-      <span aria-hidden="true" css={{ marginRight: 8 }}>
-        {dark ? '●' : '○'}
-      </span>
-      다크 모드
+    <Button variant="outline" onClick={toggle}>
+      {dark ? '라이트 모드' : '다크 모드'}
     </Button>
   );
 }

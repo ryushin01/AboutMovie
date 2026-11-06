@@ -286,11 +286,12 @@ test('다크 모드를 저장하고 시스템 설정을 따른다', async ({ bro
   const theme = () => page.evaluate(() => document.documentElement.dataset.theme);
 
   expect(await theme()).toBe('dark');
-  await page.getByRole('button', { name: '다크 모드' }).click();
+  await page.getByRole('button', { name: '라이트 모드' }).click();
   expect(await theme()).toBe('light');
+  await expect(page.getByRole('button', { name: '다크 모드' })).toBeVisible();
   await page.reload();
   expect(await theme()).toBe('light');
-  await expect(page.getByRole('button', { name: '다크 모드' })).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('button', { name: '다크 모드' })).toBeVisible();
   await context.close();
 });
 
