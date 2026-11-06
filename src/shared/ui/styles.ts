@@ -1,4 +1,4 @@
-import { css } from '@emotion/react';
+import { css, keyframes } from '@emotion/react';
 
 export const visuallyHidden = css`
   position: absolute;
@@ -46,4 +46,26 @@ export const formTitleCss = css`
   font-weight: 900;
   line-height: 0.98;
   letter-spacing: -0.04em;
+`;
+
+const shimmer = keyframes`
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+`;
+
+/** 내용을 불러오는 동안의 자리. 움직임을 줄이도록 설정한 사용자에게는 멈춘 색면으로 보입니다. */
+export const skeletonCss = css`
+  background-color: var(--surface);
+  background-image: linear-gradient(90deg, var(--surface) 25%, var(--skeleton) 50%, var(--surface) 75%);
+  background-size: 300% 100%;
+  animation: ${shimmer} 1.6s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    background-image: none;
+    animation: none;
+  }
 `;

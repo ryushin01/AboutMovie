@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
-import { useEffect, useState } from 'react';
-import { formatRuntime, type Movie } from '@/entities/movie';
+import { useEffect, useRef, useState } from 'react';
+import { formatClock as clock, formatRuntime, useSaveProgress, type Movie } from '@/entities/movie';
 import { Button } from '@/shared/ui/Button';
 
 const screenCss = css`
@@ -54,21 +54,23 @@ const seekCss = css`
   accent-color: var(--accent);
 `;
 
-const clock = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-  const rest = String(seconds % 60).padStart(2, '0');
-  return `${hours}:${minutes}:${rest}`;
-};
+const SAVE_INTERVAL_MS = 15_000;
 
 /**
- * 재생 화면입니다. 실제 영상은 없고 진행 시간만 흐릅니다.
+ * 재생 화면입니다. 실제 영상은 없고 진행 시간만 흐릅니다. 보던 위치는 재생 중 주기적으로, 그리고 멈출 때 저장합니다.
  * 자동으로 시작하지 않으며, 표준 버튼과 슬라이더만 써서 키보드로 모두 조작할 수 있습니다.
  */
-export function Player({ movie, quality }: { movie: Movie; quality: string }) {
+interface Props {
+  movie: Movie;
+  quality: string;
+  /** 지난번에 보던 위치 (초) */
+  startAt: number;
+}
+
+export function Player({ movie, quality, startAt }: Props) {
   const duration = movie.runtimeMinutes * 60;
   const [playing, setPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
+  const [position, setPosition] = useState(startAt);
   const [muted, setMuted] = useState(false);
   const [subtitles, setSubtitles] = useState(true);
 
@@ -82,6 +84,26 @@ export function Player({ movie, quality }: { movie: Movie; quality: string }) {
     }, 1000);
     return () => clearInterval(timer);
   }, [running, duration]);
+
+  const { mutate: save } = useSaveProgress();
+  const latest = useRef({ position, save });
+  useEffect(() => {
+    latest.current = { position, save };
+  });
+
+  // 재생 중에는 주기적으로 저장하고, 일시정지나 화면 이탈로 멈추면 그때 한 번 더 저장합니다.
+  useEffect(() => {
+    if (!running) return;
+    const persist = () => {
+      const { position: seconds, save: send } = latest.current;
+      if (seconds > 0) send({ id: movie.id, positionSeconds: seconds });
+    };
+    const timer = setInterval(persist, SAVE_INTERVAL_MS);
+    return () => {
+      clearInterval(timer);
+      persist();
+    };
+  }, [running, movie.id]);
 
   const toggle = () => {
     // 끝까지 본 뒤에 누르면 처음부터 다시 봅니다.

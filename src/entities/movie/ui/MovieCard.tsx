@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { routes } from '@/shared/config/routes';
 import { formatDate, isReleased, type Movie } from '../model/types';
+import { MoviePoster } from './MoviePoster';
 
 const cardCss = css`
   position: relative;
@@ -72,7 +73,7 @@ const metaCss = css`
   font-size: 0.8125rem;
 `;
 
-export function MovieCard({ movie }: { movie: Movie }) {
+export function MovieCard({ movie, note }: { movie: Movie; note?: string }) {
   const [now] = useState(() => new Date());
   const released = isReleased(movie, now);
   return (
@@ -81,7 +82,7 @@ export function MovieCard({ movie }: { movie: Movie }) {
         {(!released || movie.firstImport) && (
           <span css={badgeCss}>{released ? '국내 첫 공개' : `${formatDate(movie.releasedOn)} 공개`}</span>
         )}
-        <img src={movie.poster} alt={`${movie.title} 포스터`} loading="lazy" />
+        <MoviePoster movie={movie} />
       </div>
       <h3 css={titleCss}>
         <Link to={routes.movie(movie.id)}>{movie.title}</Link>
@@ -89,6 +90,7 @@ export function MovieCard({ movie }: { movie: Movie }) {
       <p css={metaCss}>
         {movie.year} · {movie.country}
       </p>
+      {note && <p css={metaCss}>{note}</p>}
     </article>
   );
 }

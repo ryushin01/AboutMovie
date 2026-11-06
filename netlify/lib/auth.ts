@@ -11,7 +11,8 @@ export interface Member {
  * Identity는 로컬에서 동작하지 않으므로 로컬 개발에서는 가상의 회원으로 봅니다.
  * 배포된 함수에는 deploy.context가 항상 있어(production, deploy-preview 등) 여기에 해당하지 않습니다.
  */
-const isLocalDev = (context: Context) => !context.deploy.context && Netlify.env.get('CONTEXT') === 'dev';
+export const isLocalDev = (context: Context) =>
+  !context.deploy.context && Netlify.env.get('CONTEXT') === 'dev';
 
 const LOCAL_MEMBER: Member = { id: 'local-member', email: 'member@example.com', name: '로컬 회원' };
 

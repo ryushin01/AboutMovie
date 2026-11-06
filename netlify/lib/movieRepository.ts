@@ -134,6 +134,12 @@ export async function findMovie(db: Queryable, id: string): Promise<Movie | null
   return rows[0] ? toMovie(rows[0] as Row) : null;
 }
 
+export async function findMoviesByIds(db: Queryable, ids: string[]): Promise<Map<string, Movie>> {
+  if (ids.length === 0) return new Map();
+  const { rows } = await db.query(`SELECT ${COLUMNS} FROM movies WHERE id = ANY($1)`, [ids]);
+  return new Map((rows as Row[]).map((row) => [row.id, toMovie(row)]));
+}
+
 export async function movieFacets(db: Queryable): Promise<MovieFacets> {
   const { rows } = await db.query(`
     SELECT

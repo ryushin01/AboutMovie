@@ -3,6 +3,14 @@ import { NetlifyDB } from '@netlify/database-dev';
 import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GENRES } from '../../src/entities/movie/model/types';
+import {
+  addToWatchlist,
+  deleteMemberData,
+  getLibrary,
+  getProgress,
+  removeFromWatchlist,
+  saveProgress,
+} from './libraryRepository';
 import { findMovie, homeData, movieFacets, searchMovies } from './movieRepository';
 import {
   cancelSubscription,
@@ -241,5 +249,82 @@ describe('이용권', () => {
   it('회원마다 구독을 따로 관리한다', async () => {
     await subscribe(client, USER, 'basic', NOW);
     expect((await getSubscriptionData(client, 'user-2', NOW)).subscription).toBeNull();
+  });
+});
+
+describe('찜과 이어 보기', () => {
+  const USER = 'library-user';
+
+  beforeEach(async () => {
+    await client.query('DELETE FROM watchlist');
+    await client.query('DELETE FROM watch_progress');
+  });
+
+  it('찜하고 빼며, 같은 작품을 두 번 찜해도 하나만 남는다', async () => {
+    expect(await addToWatchlist(client, USER, 'paper-whale')).toBe(true);
+    expect(await addToWatchlist(client, USER, 'paper-whale')).toBe(true);
+    expect((await getLibrary(client, USER)).watchlist.map((movie) => movie.id)).toEqual(['paper-whale']);
+
+    await removeFromWatchlist(client, USER, 'paper-whale');
+    expect((await getLibrary(client, USER)).watchlist).toEqual([]);
+  });
+
+  it('없는 작품은 찜하거나 저장할 수 없다', async () => {
+    expect(await addToWatchlist(client, USER, 'none')).toBe(false);
+    expect(await saveProgress(client, USER, 'none', 10)).toBe(false);
+  });
+
+  it('보던 위치를 저장하고 고치며, 최근에 본 순서로 돌려준다', async () => {
+    await saveProgress(client, USER, 'paper-whale', 100);
+    await saveProgress(client, USER, 'iron-harbor', 200);
+    await saveProgress(client, USER, 'paper-whale', 300);
+
+    expect(await getProgress(client, USER, 'paper-whale')).toBe(300);
+    const { continueWatching } = await getLibrary(client, USER);
+    expect(continueWatching.map(({ movie, positionSeconds }) => [movie.id, positionSeconds])).toEqual([
+      ['paper-whale', 300],
+      ['iron-harbor', 200],
+    ]);
+  });
+
+  it('거의 끝까지 보면 이어 보기에서 뺀다', async () => {
+    await saveProgress(client, USER, 'paper-whale', 100);
+    // 종이 고래는 88분
+    await saveProgress(client, USER, 'paper-whale', Math.ceil(88 * 60 * 0.95));
+    expect(await getProgress(client, USER, 'paper-whale')).toBe(0);
+    expect((await getLibrary(client, USER)).continueWatching).toEqual([]);
+  });
+
+  it('찜과 이어 보기를 자르지 않고 모두 돌려준다', async () => {
+    await client.query('INSERT INTO watchlist (user_id, movie_id) SELECT $1, id FROM movies', [USER]);
+    await client.query(
+      'INSERT INTO watch_progress (user_id, movie_id, position_seconds) SELECT $1, id, 10 FROM movies',
+      [USER],
+    );
+    const library = await getLibrary(client, USER);
+    expect(library.watchlist).toHaveLength(36);
+    expect(library.continueWatching).toHaveLength(36);
+  });
+
+  it('회원마다 따로 관리한다', async () => {
+    await addToWatchlist(client, USER, 'paper-whale');
+    await saveProgress(client, USER, 'paper-whale', 100);
+    expect(await getLibrary(client, 'other')).toEqual({ watchlist: [], continueWatching: [] });
+    expect(await getProgress(client, 'other', 'paper-whale')).toBe(0);
+  });
+
+  it('탈퇴하면 그 회원의 기록만 모두 지운다', async () => {
+    await addToWatchlist(client, USER, 'paper-whale');
+    await saveProgress(client, USER, 'paper-whale', 100);
+    await subscribe(client, USER, 'basic', NOW);
+    await addToWatchlist(client, 'other', 'paper-whale');
+    await subscribe(client, 'other', 'basic', NOW);
+
+    await deleteMemberData(client, USER);
+
+    expect(await getLibrary(client, USER)).toEqual({ watchlist: [], continueWatching: [] });
+    expect(await getSubscriptionData(client, USER, NOW)).toEqual({ subscription: null, payments: [] });
+    expect((await getLibrary(client, 'other')).watchlist).toHaveLength(1);
+    expect((await getSubscriptionData(client, 'other', NOW)).subscription?.plan).toBe('basic');
   });
 });

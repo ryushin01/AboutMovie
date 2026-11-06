@@ -11,12 +11,20 @@ test('화면 캡처', async ({ browser, baseURL }) => {
   const viewport = { width: 1440, height: 900 };
   const desktop = await browser.newContext({ baseURL, viewport, colorScheme: 'dark' });
   const page = await desktop.newPage();
-  await installFakeApi(page, { user: MEMBER, plan: 'standard' });
+  const state = await installFakeApi(page, { user: MEMBER, plan: 'standard' });
+  state.progress = { 'neon-rain': 2400, 'glass-orbit': 1500, 'iron-harbor': 3300 };
+  state.watchlist = ['island-of-clocks', 'paper-whale', 'fog-kingdom'];
 
   await page.goto('/');
   await expect(page.getByRole('region', { name: '국내 첫 공개' })).toBeVisible();
   await page.waitForLoadState('networkidle');
   await page.screenshot(shot('home-dark'));
+
+  await page.getByRole('region', { name: '이어 보기' }).scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, 420));
+  await page.waitForLoadState('networkidle');
+  await page.screenshot(shot('home-member-dark'));
+  await page.evaluate(() => window.scrollTo(0, 0));
 
   await page.setViewportSize({ width: 1200, height: 630 });
   await page.screenshot({ path: 'public/og-image.jpg', type: 'jpeg', quality: 85 });
@@ -29,7 +37,8 @@ test('화면 캡처', async ({ browser, baseURL }) => {
   await page.screenshot(shot('list-dark'));
 
   await page.goto('/movies/glass-orbit');
-  await expect(page.getByRole('link', { name: '재생' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /이어 보기/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: '찜하기' })).toBeVisible();
   await page.waitForLoadState('networkidle');
   await page.screenshot(shot('detail-dark'));
 
@@ -37,6 +46,11 @@ test('화면 캡처', async ({ browser, baseURL }) => {
   await expect(page.getByRole('slider', { name: '재생 위치' })).toBeVisible();
   await page.waitForLoadState('networkidle');
   await page.screenshot(shot('player-dark'));
+
+  await page.goto('/account');
+  await expect(page.getByRole('region', { name: '찜한 영화' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await page.screenshot(shot('account-dark'));
   await desktop.close();
 
   const light = await browser.newContext({ baseURL, viewport, colorScheme: 'light' });

@@ -60,6 +60,24 @@ test('로그인하지 않으면 이용권과 재생을 거부한다', async ({ r
     (await request.patch(`${SITE}/api/subscription`, { ...options, data: { action: 'cancel' } })).status(),
   ).toBe(401);
   expect((await request.get(`${SITE}/api/movies/last-screening/playback`)).status()).toBe(401);
+  expect((await request.get(`${SITE}/api/library`)).status()).toBe(401);
+  expect((await request.put(`${SITE}/api/library/watchlist/last-screening`, options)).status()).toBe(401);
+  expect((await request.delete(`${SITE}/api/account`, options)).status()).toBe(401);
+});
+
+test('보안 헤더를 보낸다', async ({ request }) => {
+  const { 'x-content-type-options': type, 'x-frame-options': frame } = (
+    await request.get(`${SITE}/`)
+  ).headers();
+  expect(type).toBe('nosniff');
+  expect(frame).toBe('DENY');
+});
+
+test('다른 사이트에서 온 탈퇴 요청을 거부한다', async ({ request }) => {
+  const response = await request.delete(`${SITE}/api/account`, {
+    headers: { Origin: 'https://evil.example' },
+  });
+  expect(response.status()).toBe(403);
 });
 
 test('다른 사이트에서 온 이용권 요청을 거부한다', async ({ request }) => {

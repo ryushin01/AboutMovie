@@ -296,6 +296,149 @@ test('로그아웃하면 회원 메뉴가 닫힌다', async ({ page }) => {
   await expect(page.getByRole('link', { name: '내 계정' })).toHaveCount(0);
 });
 
+test('찜한 영화가 메인과 내 계정에 나오고 뺄 수 있다', async ({ page }) => {
+  await installFakeApi(page, { user: MEMBER });
+  await page.goto('/movies/island-of-clocks');
+  const button = page.getByRole('button', { name: '찜하기' });
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+
+  await page.goto('/');
+  await expect(
+    page.getByRole('region', { name: '찜한 영화' }).getByRole('link', { name: '시계의 섬' }),
+  ).toBeVisible();
+  await page.goto('/account');
+  await expect(
+    page.getByRole('region', { name: '찜한 영화' }).getByRole('link', { name: '시계의 섬' }),
+  ).toBeVisible();
+
+  await page.goto('/movies/island-of-clocks');
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
+  await page.goto('/');
+  await expect(page.getByRole('region', { name: '국내 첫 공개' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '찜한 영화' })).toHaveCount(0);
+});
+
+test('보던 위치를 저장해 메인과 디테일에서 이어 본다', async ({ page }) => {
+  const state = await installFakeApi(page, { user: MEMBER, plan: 'standard' });
+  await page.goto('/watch/last-screening');
+  const seek = page.getByRole('slider', { name: '재생 위치' });
+  await seek.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.getByRole('button', { name: '재생' }).click();
+  await page.getByRole('button', { name: '일시정지' }).click();
+  await expect.poll(() => state.progress['last-screening']).toBeGreaterThanOrEqual(30);
+
+  await page.goto('/');
+  const row = page.getByRole('region', { name: '이어 보기' });
+  await expect(row.getByRole('link', { name: '마지막 상영' })).toBeVisible();
+  await expect(row.getByText('남음')).toBeVisible();
+
+  await row.getByRole('link', { name: '마지막 상영' }).click();
+  await page.getByRole('link', { name: /^이어 보기 \(0:00:3\d부터\)$/ }).click();
+  await expect(page.getByText(/^0:00:3\d \/ 1:52:00$/)).toBeVisible();
+  await expect(page.getByRole('button', { name: '재생' })).toBeVisible();
+});
+
+test('디테일에서 비슷한 영화로 넘어간다', async ({ page }) => {
+  await installFakeApi(page);
+  await page.goto('/movies/iron-harbor');
+  const related = page.getByRole('region', { name: '비슷한 영화' });
+  await expect(related.getByRole('link', { name: '철의 항구' })).toHaveCount(0);
+  await related.getByRole('link', { name: '먼지의 보안관' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '먼지의 보안관' })).toBeVisible();
+});
+
+test('회원 탈퇴를 확인하면 기록이 지워지고 로그아웃된다', async ({ page }) => {
+  const state = await installFakeApi(page, { user: MEMBER, plan: 'standard' });
+  await page.goto('/account');
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await page.getByRole('button', { name: '회원 탈퇴' }).click();
+  expect(state.user).not.toBeNull();
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: '회원 탈퇴' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: '회원가입' }),
+  ).toBeVisible();
+  expect(state.user).toBeNull();
+  expect(state.subscription).toBeNull();
+});
+
+test('불러오는 동안 스켈레톤을 보여 주고 도착하면 없앤다', async ({ page }) => {
+  await installFakeApi(page);
+  const skeleton = page.locator('main [data-skeleton="card"]');
+  const hold = (pattern: string) => {
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return page
+      .route(pattern, async (route) => {
+        await gate;
+        await route.fallback();
+      })
+      .then(() => release);
+  };
+
+  let release = await hold('**/api/home');
+  await page.goto('/');
+  await expect(skeleton.first()).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('영화를 불러오는 중입니다.');
+  await expectNoHorizontalOverflow(page);
+  await expectNoAxeViolations(page);
+  release();
+  await expect(page.getByRole('region', { name: '국내 첫 공개' })).toBeVisible();
+  await expect(skeleton).toHaveCount(0);
+  await page.unroute('**/api/home');
+
+  release = await hold('**/api/movies/iron-harbor');
+  await page.goto('/movies/iron-harbor');
+  await expect(page.locator('main [data-skeleton="detail"]')).toBeVisible();
+  release();
+  await expect(page.getByRole('heading', { level: 1, name: '철의 항구' })).toBeVisible();
+  await expect(page.locator('main [data-skeleton="detail"]')).toHaveCount(0);
+  await page.unroute('**/api/movies/iron-harbor');
+
+  release = await hold('**/api/movies?*');
+  await page.goto('/movies?genre=SF');
+  await expect(skeleton.first()).toBeVisible();
+  await expectNoAxeViolations(page);
+  release();
+  await expect(page.getByRole('main').getByRole('status').first()).toContainText('영화');
+  await expect(skeleton).toHaveCount(0);
+});
+
+test('포스터 이미지가 도착할 때까지 스켈레톤을 그리고, 움직임 줄이기를 따른다 [컨텍스트]', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({ baseURL, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await installFakeApi(page);
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/seed/last-screening-poster.svg', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  // 붙잡아 둔 이미지 때문에 Firefox의 load 이벤트가 끝나지 않으므로 기다리지 않습니다.
+  await page.goto('/movies/last-screening', { waitUntil: 'commit' });
+  const poster = page.getByAltText('마지막 상영 포스터');
+  await expect(poster).toHaveAttribute('data-skeleton', 'poster');
+  await expect(poster).toHaveCSS('animation-name', 'none');
+  release();
+  await expect(poster).not.toHaveAttribute('data-skeleton');
+  await context.close();
+});
+
 test('플레이어를 키보드로 조작하고 자동으로 재생하지 않는다', async ({ page, browserName }) => {
   await installFakeApi(page, { user: MEMBER, plan: 'standard' });
   await page.goto('/watch/last-screening');
@@ -317,7 +460,11 @@ test('화면 폭에 따라 한 줄의 카드 수가 달라지고 다음 버튼�
   browser,
   baseURL,
 }) => {
-  const context = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 } });
+  const context = await browser.newContext({
+    baseURL,
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: 'reduce',
+  });
   const page = await context.newPage();
   await installFakeApi(page);
   await page.goto('/');
@@ -325,6 +472,8 @@ test('화면 폭에 따라 한 줄의 카드 수가 달라지고 다음 버튼�
   await expect(list.getByRole('listitem').first()).toBeVisible();
   const ratio = await list.evaluate((element) => element.clientWidth / element.children[0].clientWidth);
   expect(ratio).toBeGreaterThan(6);
+  // 부드러운 스크롤은 로딩 중 레이아웃이 바뀌면 끊길 수 있어, 애니메이션을 끄고 로딩이 끝난 뒤 누릅니다.
+  await page.waitForLoadState('networkidle');
 
   await page.getByRole('button', { name: '최근 공개 다음 목록' }).click();
   await expect.poll(() => list.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);

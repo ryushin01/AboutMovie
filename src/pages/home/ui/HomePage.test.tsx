@@ -8,15 +8,45 @@ describe('HomePage', () => {
   it('시네필 소개와 대표작, 작품 줄을 보여 준다', async () => {
     installFakeApi();
     renderWithProviders(<HomePage />);
+    // 제목은 불러오는 동안에도 있으므로 대표작이 도착하기를 먼저 기다립니다.
+    expect(await screen.findByRole('heading', { level: 2, name: '마지막 상영' })).toBeInTheDocument();
     expect(
-      await screen.findByRole('heading', { level: 1, name: /시네필을 위한 영화 전문 OTT/ }),
+      screen.getByRole('heading', { level: 1, name: /시네필을 위한 영화 전문 OTT/ }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: '마지막 상영' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '국내 첫 공개' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '자세히 보기: 마지막 상영' })).toHaveAttribute(
       'href',
       '/movies/last-screening',
     );
+  });
+
+  it('회원에게는 이어 보기와 남은 시간, 찜한 영화를 보여 준다', async () => {
+    const { state } = installFakeApi();
+    state.progress['last-screening'] = 600;
+    state.watchlist = ['last-screening'];
+    renderWithProviders(<HomePage />);
+    const watching = await screen.findByRole('region', { name: '이어 보기' });
+    expect(watching).toHaveTextContent('1시간 42분 남음');
+    expect(screen.getByRole('region', { name: '찜한 영화' })).toHaveTextContent('마지막 상영');
+  });
+
+  it('방문자에게는 회원 줄이 없다', async () => {
+    const { state } = installFakeApi({ user: null });
+    renderWithProviders(<HomePage />);
+    await screen.findByRole('region', { name: '국내 첫 공개' });
+    expect(screen.queryByRole('region', { name: '이어 보기' })).not.toBeInTheDocument();
+    expect(state.calls.some((call) => call.path === '/api/library')).toBe(false);
+  });
+
+  it('불러오는 동안 제목과 안내, 스켈레톤을 보여 준다', () => {
+    const { state } = installFakeApi();
+    state.hold = new Promise(() => {});
+    const { container } = renderWithProviders(<HomePage />);
+    expect(
+      screen.getByRole('heading', { level: 1, name: /시네필을 위한 영화 전문 OTT/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('영화를 불러오는 중입니다.');
+    expect(container.querySelector('[data-skeleton="card"]')).toBeInTheDocument();
   });
 
   it('장르 링크는 리스트의 필터로 간다', async () => {

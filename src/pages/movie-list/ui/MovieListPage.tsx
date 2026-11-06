@@ -1,11 +1,13 @@
 import { css } from '@emotion/react';
 import { Link, useSearchParams } from 'react-router';
-import { MovieCard, parseMovieFilters, toMovieQuery, useMovies } from '@/entities/movie';
+import { MovieCard, MovieCardSkeleton, parseMovieFilters, toMovieQuery, useMovies } from '@/entities/movie';
 import { MovieFilterForm } from '@/features/filter-movies';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
 import { buttonCss } from '@/shared/ui/Button';
 import { visuallyHidden } from '@/shared/ui/styles';
+
+const SKELETON_CARDS = 12;
 
 const titleCss = css`
   margin: 0;
@@ -56,14 +58,25 @@ export function MovieListPage() {
   useDocumentTitle('영화 찾기');
   const [params, setParams] = useSearchParams();
   const filters = parseMovieFilters(params);
-  const { data, isPending, isError } = useMovies(filters);
+  const { data, isPending, isError } = useMovies(filters, { keepPrevious: true });
   const pageCount = data ? Math.ceil(data.total / data.pageSize) : 0;
 
   return (
     <>
       <h1 css={titleCss}>영화 찾기</h1>
       <MovieFilterForm filters={filters} onApply={(query) => setParams(new URLSearchParams(query))} />
-      {isPending && <output css={{ display: 'block', marginTop: 32 }}>영화를 불러오는 중입니다.</output>}
+      {isPending && (
+        <>
+          <output css={visuallyHidden}>영화를 불러오는 중입니다.</output>
+          <ul aria-hidden="true" css={[gridCss, { marginTop: 32 }]}>
+            {Array.from({ length: SKELETON_CARDS }, (_, index) => (
+              <li key={index}>
+                <MovieCardSkeleton />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       {isError && (
         <p role="alert" css={{ marginTop: 32 }}>
           영화를 불러오지 못했습니다. 새로고침해 주세요.
