@@ -1,7 +1,7 @@
 # AboutMovie
 
 [![CI](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml)
-[![version](https://img.shields.io/badge/version-3.0.1-a82c0c)](https://github.com/ryushin01/AboutMovie/releases/latest)
+[![version](https://img.shields.io/badge/version-3.1.0-a82c0c)](https://github.com/ryushin01/AboutMovie/releases/latest)
 
 시네필을 위한 영화 전문 OTT입니다. 시리즈도 예능도 없이 영화만 다루고, 국내에 수입되지 않은 영화를 누구보다 먼저 들여와 보여 줍니다.
 
@@ -19,9 +19,13 @@
 |---|---|
 | ![국내 첫 공개작 소개가 크게 놓이고 아래로 가상 영화 포스터가 가로로 나열된 어두운 메인 화면](docs/images/home-dark.jpg) | ![국내 첫 공개작 소개가 크게 놓이고 아래로 가상 영화 포스터가 가로로 나열된 밝은 메인 화면](docs/images/home-light.jpg) |
 
-| 리스트 | 디테일 |
+| 리스트 | 메인의 이어 보기 |
 |---|---|
-| ![검색어, 장르, 공개 상태, 연도, 국가, 등급, 러닝타임, 감독, 배우 필터 아래로 포스터가 격자로 놓인 리스트 화면](docs/images/list-dark.jpg) | ![포스터와 제목, 원제, 관람 등급, 러닝타임, 줄거리, 재생 버튼이 놓인 작품 상세 화면](docs/images/detail-dark.jpg) |
+| ![검색어, 장르, 공개 상태, 연도, 국가, 등급, 러닝타임, 감독, 배우 필터 아래로 포스터가 격자로 놓인 리스트 화면](docs/images/list-dark.jpg) | ![이어 보기 줄이 맨 위에 놓인 메인 화면](docs/images/home-member-dark.jpg) |
+
+| 내 계정 | 디테일 |
+|---|---|
+| ![이용 중인 이용권과 변경 버튼, 결제 내역, 찜한 영화, 회원 탈퇴가 놓인 내 계정 화면](docs/images/account-dark.jpg) | ![이어서 볼 위치를 알리는 버튼과 찜하기 버튼이 놓인 작품 상세 화면](docs/images/detail-dark.jpg) |
 
 | 이용권 | 재생 |
 |---|---|
@@ -33,10 +37,13 @@
 - 작품 정보: 제목, 원제, 제작 연도, 국가, 장르, 감독, 각본, 출연, 러닝타임, 관람 등급과 등급 사유, 음성·자막 언어, 분위기, 수입 이야기
 - 검색: 제목, 원제, 감독, 각본, 배우, 국가. 어느 화면에서든 머리글에서 검색
 - 필터: 장르, 제작 연도, 국가, 감독, 배우, 관람 등급, 러닝타임, 공개 상태, 국내 첫 공개작, 정렬. 조건이 주소에 남아 공유와 뒤로 가기가 그대로 동작
-- 회원가입, 로그인, 비밀번호 재설정
+- 회원가입(메일 확인), 로그인, 비밀번호 재설정, 회원 탈퇴
 - 이용권 3종과 가상 결제: 구독, 정기 결제, 올리기(차액 결제), 낮추기(다음 결제일 예약), 해지 예약과 취소, 만료, 결제 실패, 결제 내역
 - 재생 권한은 서버가 확인: 국내 첫 공개작은 스탠다드 이상, 공개 전 작품은 재생 불가
 - 재생 화면: 자동 재생 없음, 위치 이동, 자막, 음소거, 이용권별 화질 표시, 키보드 조작
+- 이어 보기: 보던 위치를 서버에 저장해 메인과 디테일에서 이어서 재생
+- 찜하기: 공개 예정작까지 찜해 메인과 내 계정에서 모아 보기
+- 비슷한 영화: 디테일에서 같은 장르의 다른 영화로 이동
 - 다크 모드 (처음에는 시스템 설정을 따르고, 고른 값을 기억)
 
 ## 기술 스택
@@ -89,8 +96,8 @@ src/
 ├─ app/             진입점, 라우터, 전역 스타일과 테마 색상
 ├─ pages/           home, movie-list, movie-detail, watch, plans, checkout, account, login, signup, not-found
 ├─ widgets/         site-layout (머리글, 본문 바로가기, 바닥글), movie-row (가로 포스터 줄)
-├─ features/        search-movies, filter-movies, subscribe, manage-subscription, login, signup, logout, toggle-theme
-├─ entities/        movie (작품, 검색 조건), subscription (이용권, 재생 권한), session (로그인 상태)
+├─ features/        search-movies, filter-movies, toggle-watchlist, subscribe, manage-subscription, login, signup, logout, delete-account, toggle-theme
+├─ entities/        movie (작품, 검색 조건, 찜과 이어 보기), subscription (이용권, 재생 권한), session (로그인 상태)
 └─ shared/          공통 UI, 경로, 유틸리티
 ```
 

@@ -1,10 +1,12 @@
 import { css } from '@emotion/react';
 import { Link, useParams } from 'react-router';
 import { AGE_LABELS, formatDate, formatRuntime, GenreLinks, useMovie, type Movie } from '@/entities/movie';
+import { WatchlistButton } from '@/features/toggle-watchlist';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
 import { buttonCss } from '@/shared/ui/Button';
 import { PageMessage } from '@/shared/ui/PageMessage';
+import { RelatedMovies } from './RelatedMovies';
 import { WatchAction } from './WatchAction';
 
 const heroCss = css`
@@ -78,6 +80,12 @@ const metaCss = css`
 const synopsisCss = css`
   margin: 16px 0 24px;
   font-size: clamp(1rem, 1.4vw, 1.1875rem);
+`;
+const actionsCss = css`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
 `;
 const sectionCss = css`
   max-width: 60rem;
@@ -211,7 +219,10 @@ export function MovieDetailPage() {
           </ul>
           <GenreLinks genres={movie.genres} />
           <p css={synopsisCss}>{movie.synopsis}</p>
-          <WatchAction movie={movie} />
+          <div css={actionsCss}>
+            <WatchAction movie={movie} />
+            <WatchlistButton movieId={movie.id} />
+          </div>
         </div>
       </div>
       <MovieInfo movie={movie} />
@@ -219,6 +230,7 @@ export function MovieDetailPage() {
         <h2 id="import-title">수입 이야기</h2>
         <p css={{ margin: 0 }}>{movie.importNote}</p>
       </section>
+      <RelatedMovies movie={movie} />
     </article>
   );
 }

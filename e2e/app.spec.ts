@@ -296,6 +296,80 @@ test('로그아웃하면 회원 메뉴가 닫힌다', async ({ page }) => {
   await expect(page.getByRole('link', { name: '내 계정' })).toHaveCount(0);
 });
 
+test('찜한 영화가 메인과 내 계정에 나오고 뺄 수 있다', async ({ page }) => {
+  await installFakeApi(page, { user: MEMBER });
+  await page.goto('/movies/island-of-clocks');
+  const button = page.getByRole('button', { name: '찜하기' });
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+
+  await page.goto('/');
+  await expect(
+    page.getByRole('region', { name: '찜한 영화' }).getByRole('link', { name: '시계의 섬' }),
+  ).toBeVisible();
+  await page.goto('/account');
+  await expect(
+    page.getByRole('region', { name: '찜한 영화' }).getByRole('link', { name: '시계의 섬' }),
+  ).toBeVisible();
+
+  await page.goto('/movies/island-of-clocks');
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
+  await page.goto('/');
+  await expect(page.getByRole('region', { name: '국내 첫 공개' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '찜한 영화' })).toHaveCount(0);
+});
+
+test('보던 위치를 저장해 메인과 디테일에서 이어 본다', async ({ page }) => {
+  const state = await installFakeApi(page, { user: MEMBER, plan: 'standard' });
+  await page.goto('/watch/last-screening');
+  const seek = page.getByRole('slider', { name: '재생 위치' });
+  await seek.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.getByRole('button', { name: '재생' }).click();
+  await page.getByRole('button', { name: '일시정지' }).click();
+  await expect.poll(() => state.progress['last-screening']).toBeGreaterThanOrEqual(30);
+
+  await page.goto('/');
+  const row = page.getByRole('region', { name: '이어 보기' });
+  await expect(row.getByRole('link', { name: '마지막 상영' })).toBeVisible();
+  await expect(row.getByText('남음')).toBeVisible();
+
+  await row.getByRole('link', { name: '마지막 상영' }).click();
+  await page.getByRole('link', { name: /^이어 보기 \(0:00:3\d부터\)$/ }).click();
+  await expect(page.getByText(/^0:00:3\d \/ 1:52:00$/)).toBeVisible();
+  await expect(page.getByRole('button', { name: '재생' })).toBeVisible();
+});
+
+test('디테일에서 비슷한 영화로 넘어간다', async ({ page }) => {
+  await installFakeApi(page);
+  await page.goto('/movies/iron-harbor');
+  const related = page.getByRole('region', { name: '비슷한 영화' });
+  await expect(related.getByRole('link', { name: '철의 항구' })).toHaveCount(0);
+  await related.getByRole('link', { name: '먼지의 보안관' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '먼지의 보안관' })).toBeVisible();
+});
+
+test('회원 탈퇴를 확인하면 기록이 지워지고 로그아웃된다', async ({ page }) => {
+  const state = await installFakeApi(page, { user: MEMBER, plan: 'standard' });
+  await page.goto('/account');
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await page.getByRole('button', { name: '회원 탈퇴' }).click();
+  expect(state.user).not.toBeNull();
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: '회원 탈퇴' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: '회원가입' }),
+  ).toBeVisible();
+  expect(state.user).toBeNull();
+  expect(state.subscription).toBeNull();
+});
+
 test('플레이어를 키보드로 조작하고 자동으로 재생하지 않는다', async ({ page, browserName }) => {
   await installFakeApi(page, { user: MEMBER, plan: 'standard' });
   await page.goto('/watch/last-screening');

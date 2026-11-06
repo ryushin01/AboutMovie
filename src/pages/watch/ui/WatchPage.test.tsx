@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router';
 import { describe, expect, it } from 'vitest';
@@ -54,6 +54,37 @@ describe('WatchPage', () => {
 
     await user.click(screen.getByRole('button', { name: '재생' }));
 
+    expect(screen.getByText('0:00:00 / 1:52:00')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '일시정지' })).toBeInTheDocument();
+  });
+
+  it('지난번 위치에서 시작하고, 일시정지하면 위치를 저장한다', async () => {
+    const user = userEvent.setup();
+    const { state } = installFakeApi({ subscription: activeSubscription('standard') });
+    state.progress['last-screening'] = 600;
+    view();
+    expect(await screen.findByText('0:10:00 / 1:52:00')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '재생' }));
+    await user.click(screen.getByRole('button', { name: '일시정지' }));
+
+    await waitFor(() =>
+      expect(state.calls.find((call) => call.method === 'PUT')?.path).toBe(
+        '/api/library/progress/last-screening',
+      ),
+    );
+    expect(state.progress['last-screening']).toBeGreaterThanOrEqual(600);
+  });
+
+  it('끝까지 재생되면 멈추고, 다시 누르면 처음부터 시작한다', async () => {
+    const user = userEvent.setup();
+    const { state } = installFakeApi({ subscription: activeSubscription('standard') });
+    state.progress['last-screening'] = 112 * 60 - 1;
+    view();
+    await user.click(await screen.findByRole('button', { name: '재생' }));
+    expect(await screen.findByText('1:52:00 / 1:52:00', {}, { timeout: 2500 })).toBeInTheDocument();
+    const replay = screen.getByRole('button', { name: '재생' });
+    await user.click(replay);
     expect(screen.getByText('0:00:00 / 1:52:00')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '일시정지' })).toBeInTheDocument();
   });

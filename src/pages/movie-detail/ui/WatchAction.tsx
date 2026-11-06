@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { formatDate, isReleased, type Movie } from '@/entities/movie';
+import { formatClock, formatDate, isReleased, useLibrary, type Movie } from '@/entities/movie';
 import { useSession } from '@/entities/session';
 import { activePlan, useSubscription, watchBlock } from '@/entities/subscription';
 import { routes } from '@/shared/config/routes';
@@ -26,6 +26,7 @@ const noteCss = css`
 export function WatchAction({ movie }: { movie: Movie }) {
   const { user, isPending } = useSession();
   const { data, isPending: loadingPlan } = useSubscription(user?.id);
+  const { data: library } = useLibrary(user?.id);
   const [now] = useState(() => new Date());
   const released = isReleased(movie, now);
 
@@ -61,9 +62,10 @@ export function WatchAction({ movie }: { movie: Movie }) {
       </>
     );
   }
+  const watching = library?.continueWatching.find((item) => item.movie.id === movie.id);
   return (
     <Link to={routes.watch(movie.id)} css={[buttonCss(), linkCss]}>
-      재생
+      {watching ? `이어 보기 (${formatClock(watching.positionSeconds)}부터)` : '재생'}
     </Link>
   );
 }

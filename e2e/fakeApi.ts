@@ -181,6 +181,8 @@ export async function installFakeApi(
     subscription: plan ? subscriptionFor(plan) : null,
     payments: [] as Record<string, unknown>[],
     posts: 0,
+    watchlist: [] as string[],
+    progress: {} as Record<string, number>,
     delay: 0,
   };
   const pay = (id: string, amount: number, kind: string, status = 'paid') =>
@@ -248,7 +250,39 @@ export async function installFakeApi(
     if (movie.firstImport && state.subscription.plan === 'basic')
       return route.fulfill({ status: 403, json: { error: 'upgrade_required' } });
     const quality = { basic: 'HD', standard: 'FHD', premium: '4K' }[state.subscription.plan];
-    return route.fulfill({ json: { quality } });
+    return route.fulfill({ json: { quality, positionSeconds: state.progress[id] ?? 0 } });
+  });
+
+  await page.route('**/api/account', (route) => {
+    if (!state.user) return route.fulfill({ status: 401, json: { error: 'unauthorized' } });
+    state.user = null;
+    state.subscription = null;
+    state.payments = [];
+    state.watchlist = [];
+    state.progress = {};
+    return route.fulfill({ status: 204 });
+  });
+  await page.route('**/api/library', (route) => {
+    if (!state.user) return route.fulfill({ status: 401, json: { error: 'unauthorized' } });
+    const byId = (id: string) => state.movies.find((movie) => movie.id === id);
+    return route.fulfill({
+      json: {
+        watchlist: state.watchlist.flatMap((id) => byId(id) ?? []),
+        continueWatching: Object.entries(state.progress).flatMap(([id, positionSeconds]) => {
+          const movie = byId(id);
+          return movie ? [{ movie, positionSeconds }] : [];
+        }),
+      },
+    });
+  });
+  await page.route('**/api/library/*/*', (route) => {
+    if (!state.user) return route.fulfill({ status: 401, json: { error: 'unauthorized' } });
+    const [kind, id] = new URL(route.request().url()).pathname.split('/').slice(-2);
+    const method = route.request().method();
+    if (kind === 'progress') state.progress[id] = route.request().postDataJSON().positionSeconds;
+    else if (method === 'PUT') state.watchlist = [id, ...state.watchlist.filter((item) => item !== id)];
+    else state.watchlist = state.watchlist.filter((item) => item !== id);
+    return route.fulfill({ status: 204 });
   });
 
   await page.route('**/api/subscription', async (route: Route) => {

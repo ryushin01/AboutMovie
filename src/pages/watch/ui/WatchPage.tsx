@@ -67,7 +67,7 @@ export function WatchPage() {
   return (
     <>
       <h1 css={titleCss}>{movie.data.title}</h1>
-      <Player movie={movie.data} quality={playback.data.quality} />
+      <Player movie={movie.data} quality={playback.data.quality} startAt={playback.data.positionSeconds} />
     </>
   );
 }

@@ -66,6 +66,8 @@ export function installFakeApi({
     user,
     subscription,
     payments: [] as Record<string, unknown>[],
+    watchlist: [] as string[],
+    progress: {} as Record<string, number>,
     calls: [] as { method: string; path: string; body?: unknown }[],
     fail: null as null | ((method: string, path: string) => boolean),
     hold: null as null | Promise<void>,
@@ -84,6 +86,28 @@ export function installFakeApi({
 
     if (path === '/api/me') return Response.json({ user: state.user });
     if (path === '/api/movie-facets') return Response.json(FACETS);
+    if (path === '/api/account') {
+      state.user = null;
+      return new Response(null, { status: 204 });
+    }
+    if (path === '/api/library') {
+      const byId = (id: string) => state.movies.find((movie) => movie.id === id);
+      return Response.json({
+        watchlist: state.watchlist.flatMap((id) => byId(id) ?? []),
+        continueWatching: Object.entries(state.progress).flatMap(([id, positionSeconds]) => {
+          const movie = byId(id);
+          return movie ? [{ movie, positionSeconds }] : [];
+        }),
+      });
+    }
+    const library = path.match(/^\/api\/library\/(watchlist|progress)\/(.+)$/);
+    if (library) {
+      const id = decodeURIComponent(library[2]);
+      if (library[1] === 'progress') state.progress[id] = body.positionSeconds;
+      else if (method === 'PUT') state.watchlist.push(id);
+      else state.watchlist = state.watchlist.filter((item) => item !== id);
+      return new Response(null, { status: 204 });
+    }
     if (path === '/api/home') {
       return Response.json({
         featured: state.movies[0] ?? null,
@@ -131,7 +155,7 @@ export function installFakeApi({
       if (!movie) return Response.json({ error: 'not_found' }, { status: 404 });
       if (!state.user) return Response.json({ error: 'login_required' }, { status: 401 });
       if (!state.subscription) return Response.json({ error: 'plan_required' }, { status: 403 });
-      return Response.json({ quality: 'FHD' });
+      return Response.json({ quality: 'FHD', positionSeconds: state.progress[movie.id] ?? 0 });
     }
 
     const id = decodeURIComponent(path.replace('/api/movies/', ''));

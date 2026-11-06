@@ -107,11 +107,13 @@ interface Props {
   title: string;
   movies: Movie[];
   /** 전체 보기로 갈 리스트 주소 */
-  moreTo: string;
+  moreTo?: string;
+  /** 작품별로 카드에 덧붙일 글 (남은 시간 등) */
+  notes?: Record<string, string>;
 }
 
 /** 제목 하나와 옆으로 넘기는 포스터 한 줄입니다. */
-export function MovieRow({ title, movies, moreTo }: Props) {
+export function MovieRow({ title, movies, moreTo, notes }: Props) {
   const titleId = useId();
   const listRef = useRef<HTMLUListElement>(null);
   const [edges, setEdges] = useState({ start: true, end: true });
@@ -148,9 +150,11 @@ export function MovieRow({ title, movies, moreTo }: Props) {
           {title}
         </h2>
         <div css={toolsCss}>
-          <Link to={moreTo} css={moreCss}>
-            <span css={visuallyHidden}>{title}</span> 전체 보기
-          </Link>
+          {moreTo && (
+            <Link to={moreTo} css={moreCss}>
+              <span css={visuallyHidden}>{title}</span> 전체 보기
+            </Link>
+          )}
           {!(edges.start && edges.end) && (
             <div css={controlsCss}>
               <button
@@ -178,7 +182,7 @@ export function MovieRow({ title, movies, moreTo }: Props) {
       <ul ref={listRef} css={listCss}>
         {movies.map((movie) => (
           <li key={movie.id}>
-            <MovieCard movie={movie} />
+            <MovieCard movie={movie} note={notes?.[movie.id]} />
           </li>
         ))}
       </ul>

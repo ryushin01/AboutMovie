@@ -19,6 +19,24 @@ describe('HomePage', () => {
     );
   });
 
+  it('회원에게는 이어 보기와 남은 시간, 찜한 영화를 보여 준다', async () => {
+    const { state } = installFakeApi();
+    state.progress['last-screening'] = 600;
+    state.watchlist = ['last-screening'];
+    renderWithProviders(<HomePage />);
+    const watching = await screen.findByRole('region', { name: '이어 보기' });
+    expect(watching).toHaveTextContent('1시간 42분 남음');
+    expect(screen.getByRole('region', { name: '찜한 영화' })).toHaveTextContent('마지막 상영');
+  });
+
+  it('방문자에게는 회원 줄이 없다', async () => {
+    const { state } = installFakeApi({ user: null });
+    renderWithProviders(<HomePage />);
+    await screen.findByRole('region', { name: '국내 첫 공개' });
+    expect(screen.queryByRole('region', { name: '이어 보기' })).not.toBeInTheDocument();
+    expect(state.calls.some((call) => call.path === '/api/library')).toBe(false);
+  });
+
   it('장르 링크는 리스트의 필터로 간다', async () => {
     installFakeApi();
     renderWithProviders(<HomePage />);

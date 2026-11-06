@@ -1,11 +1,15 @@
 import { css } from '@emotion/react';
-import { Link } from 'react-router';
+import { useState } from 'react';
+import { Link, Navigate } from 'react-router';
+import { useLibrary } from '@/entities/movie';
 import { RequireAuth, useSession, type SessionUser } from '@/entities/session';
 import { activePlan, formatPrice, PLANS, useSubscription, type Payment } from '@/entities/subscription';
+import { DeleteAccountButton } from '@/features/delete-account';
 import { SubscriptionManager } from '@/features/manage-subscription';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
 import { buttonCss } from '@/shared/ui/Button';
+import { MovieRow } from '@/widgets/movie-row';
 
 const titleCss = css`
   margin: 0;
@@ -89,9 +93,10 @@ function Payments({ payments }: { payments: Payment[] }) {
   );
 }
 
-function Account({ user }: { user: SessionUser }) {
+function Account({ user, onDeleted }: { user: SessionUser; onDeleted: () => void }) {
   const { data, isPending, isError } = useSubscription(user.id);
   const plan = activePlan(data?.subscription);
+  const { data: library } = useLibrary(user.id);
 
   return (
     <>
@@ -121,6 +126,12 @@ function Account({ user }: { user: SessionUser }) {
           {data.payments.length > 0 && <Payments payments={data.payments} />}
         </>
       )}
+      {library && library.watchlist.length > 0 && <MovieRow title="찜한 영화" movies={library.watchlist} />}
+      <section css={sectionCss}>
+        <h2>회원 탈퇴</h2>
+        <p css={{ margin: '0 0 12px' }}>계정과 이용권, 결제 내역, 찜 목록, 이어 보기 기록을 모두 지웁니다.</p>
+        <DeleteAccountButton onDone={onDeleted} />
+      </section>
     </>
   );
 }
@@ -128,5 +139,8 @@ function Account({ user }: { user: SessionUser }) {
 export function AccountPage() {
   useDocumentTitle('내 계정');
   const { user } = useSession();
-  return <RequireAuth>{user && <Account user={user} />}</RequireAuth>;
+  // 세션이 비기 전에 세우므로, 탈퇴한 사람이 로그인 화면으로 가는 순간이 생기지 않습니다.
+  const [deleted, setDeleted] = useState(false);
+  if (deleted) return <Navigate to={routes.home} replace />;
+  return <RequireAuth>{user && <Account user={user} onDeleted={() => setDeleted(true)} />}</RequireAuth>;
 }

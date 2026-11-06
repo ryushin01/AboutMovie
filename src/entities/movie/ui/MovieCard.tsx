@@ -72,7 +72,7 @@ const metaCss = css`
   font-size: 0.8125rem;
 `;
 
-export function MovieCard({ movie }: { movie: Movie }) {
+export function MovieCard({ movie, note }: { movie: Movie; note?: string }) {
   const [now] = useState(() => new Date());
   const released = isReleased(movie, now);
   return (
@@ -89,6 +89,7 @@ export function MovieCard({ movie }: { movie: Movie }) {
       <p css={metaCss}>
         {movie.year} · {movie.country}
       </p>
+      {note && <p css={metaCss}>{note}</p>}
     </article>
   );
 }

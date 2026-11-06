@@ -74,6 +74,24 @@ describe('MovieDetailPage', () => {
     expect(await screen.findByRole('link', { name: '재생' })).toBeInTheDocument();
   });
 
+  it('보던 영화는 이어 보기로 안내한다', async () => {
+    const { state } = installFakeApi({ subscription: activeSubscription('standard') });
+    state.progress['last-screening'] = 600;
+    view();
+    expect(await screen.findByRole('link', { name: '이어 보기 (0:10:00부터)' })).toHaveAttribute(
+      'href',
+      '/watch/last-screening',
+    );
+  });
+
+  it('같은 장르의 다른 영화를 보여 주고 자기 자신은 뺀다', async () => {
+    installFakeApi({ movies: [sampleMovie(), sampleMovie({ id: 'winter-route', title: '겨울의 항로' })] });
+    view();
+    const related = await screen.findByRole('region', { name: '비슷한 영화' });
+    expect(related).toHaveTextContent('겨울의 항로');
+    expect(related).not.toHaveTextContent('마지막 상영');
+  });
+
   it('공개 전 작품은 공개일만 안내한다', async () => {
     installFakeApi({
       movies: [sampleMovie({ releasedOn: '2999-01-15' })],

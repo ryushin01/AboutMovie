@@ -1,4 +1,13 @@
-export { useHome, useMovie, useMovieFacets, useMovies, usePlayback } from './api/queries';
+export {
+  useHome,
+  useLibrary,
+  useMovie,
+  useMovieFacets,
+  useMovies,
+  usePlayback,
+  useSaveProgress,
+  useToggleWatchlist,
+} from './api/queries';
 export {
   parseMovieFilters,
   PAGE_SIZE,
@@ -10,12 +19,14 @@ export {
 } from './model/filters';
 export {
   AGE_LABELS,
+  formatClock,
   formatDate,
   formatRuntime,
   GENRES,
   isReleased,
   type Genre,
   type HomeRow,
+  type MemberLibrary,
   type Movie,
   type MovieFacets,
 } from './model/types';

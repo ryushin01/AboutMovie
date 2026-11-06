@@ -89,6 +89,23 @@ export interface HomeData {
   rows: HomeRow[];
 }
 
+/** 회원의 찜 목록과 보던 영화 */
+export interface MemberLibrary {
+  watchlist: Movie[];
+  continueWatching: { movie: Movie; positionSeconds: number }[];
+}
+
+/** 이만큼 보면 끝까지 본 것으로 보고 이어 보기에서 뺍니다. */
+export const COMPLETED_RATIO = 0.95;
+
+/** 3720 → "1:02:00" */
+export function formatClock(seconds: number) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  const rest = String(seconds % 60).padStart(2, '0');
+  return `${hours}:${minutes}:${rest}`;
+}
+
 /** 공개일은 한국 날짜로 판단합니다. */
 export const koreaToday = (now: Date) => now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 

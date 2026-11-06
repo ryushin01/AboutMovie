@@ -3,6 +3,7 @@ import type { Config, Context } from '@netlify/functions';
 import { isReleased } from '../../src/entities/movie/model/types';
 import { activePlan, PLANS, watchBlock } from '../../src/entities/subscription/model/plans';
 import { currentMember } from '../lib/auth';
+import { getProgress } from '../lib/libraryRepository';
 import { findMovie } from '../lib/movieRepository';
 import { getSubscription } from '../lib/subscriptionRepository';
 
@@ -22,7 +23,10 @@ export default async (_req: Request, context: Context) => {
     { loggedIn: Boolean(member), plan },
   );
   if (block) return Response.json({ error: block }, { status: STATUS[block] });
-  return Response.json({ quality: PLANS[plan!].quality }, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json(
+    { quality: PLANS[plan!].quality, positionSeconds: await getProgress(db, member!.id, movie.id) },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
 };
 
 export const config: Config = { path: '/api/movies/:id/playback' };
