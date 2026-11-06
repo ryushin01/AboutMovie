@@ -181,6 +181,31 @@ test('회원가입하고 이용권을 결제해 영화를 재생한다', async (
   await expect(page.getByRole('button', { name: '재생' })).toBeVisible();
 });
 
+test('메일 확인이 필요한 가입은 안내하고, 메일의 링크로 들어오면 로그인된다', async ({ page }) => {
+  const state = await installFakeApi(page, { requireEmailConfirmation: true });
+  await page.goto('/signup');
+  await page.getByLabel('이름 (필수)').fill('새 시네필');
+  await page.getByLabel('이메일 (필수)').fill('cinephile@example.com');
+  await page.getByLabel('비밀번호 (필수)').fill('password1');
+  await page.getByRole('button', { name: '가입하기' }).click();
+  await expect(
+    page.getByText('cinephile@example.com로 확인 메일을 보냈습니다.', { exact: false }),
+  ).toBeVisible();
+  expect(state.user).toBeNull();
+
+  // 메일의 링크는 사이트 첫 화면으로 들어옵니다.
+  await page.goto('/#confirmation_token=abc');
+  await expect(
+    page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: '내 계정' }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { level: 1, name: /시네필을 위한/ })).toBeVisible();
+  // 다른 회원이 아니라 가입한 사람으로 로그인됩니다.
+  expect(state.user).toMatchObject({ id: 'u-new', email: 'cinephile@example.com' });
+  await page.getByRole('link', { name: '내 계정' }).click();
+  await expect(page.getByText('새 시네필 · cinephile@example.com')).toBeVisible();
+});
+
 test('결제 실패를 안내하고 이용권을 시작하지 않는다', async ({ page }) => {
   const state = await installFakeApi(page, { user: MEMBER });
   await page.goto('/checkout/basic');
