@@ -70,7 +70,7 @@ const footerCss = css`
 `;
 
 export function SiteLayout() {
-  const { user } = useSession();
+  const { user, isPending } = useSession();
   const { pathname } = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(pathname);
@@ -99,7 +99,8 @@ export function SiteLayout() {
           <NavLink to={routes.plans} css={navLinkCss}>
             이용권
           </NavLink>
-          {user ? (
+          {/* 확인이 끝나기 전에는 회원에게 로그인 메뉴가 깜빡이지 않도록 둘 다 숨깁니다. */}
+          {isPending ? null : user ? (
             <>
               <NavLink to={routes.account} css={navLinkCss}>
                 내 계정
