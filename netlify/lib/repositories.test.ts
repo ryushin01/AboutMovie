@@ -113,6 +113,12 @@ describe('searchMovies', () => {
     expect(items).toHaveLength(1);
   });
 
+  it('범위 밖의 페이지는 오류 없이 빈 목록을 돌려준다', async () => {
+    const { items, total } = await searchMovies(client, { page: 100000 }, NOW);
+    expect(items).toEqual([]);
+    expect(total).toBe(36);
+  });
+
   it('페이지를 나눈다', async () => {
     const first = await searchMovies(client, { page: 1 }, NOW);
     const second = await searchMovies(client, { page: 2 }, NOW);

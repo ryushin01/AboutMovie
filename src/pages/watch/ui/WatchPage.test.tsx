@@ -44,6 +44,20 @@ describe('WatchPage', () => {
     await act(async () => {});
   });
 
+  it('끝까지 본 뒤 재생을 누르면 처음부터 다시 시작한다', async () => {
+    const user = userEvent.setup();
+    installFakeApi({ subscription: activeSubscription('standard') });
+    view();
+    const seek = await screen.findByRole('slider', { name: '재생 위치' });
+    fireEvent.change(seek, { target: { value: String(112 * 60) } });
+    expect(screen.getByText('1:52:00 / 1:52:00')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '재생' }));
+
+    expect(screen.getByText('0:00:00 / 1:52:00')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '일시정지' })).toBeInTheDocument();
+  });
+
   it('로그인하지 않으면 로그인 화면으로 보낸다', async () => {
     installFakeApi({ user: null });
     view();
