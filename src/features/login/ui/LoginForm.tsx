@@ -15,31 +15,36 @@ const alertCss = css`
   color: var(--accent);
   font-weight: 700;
 `;
+const actionsCss = css`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
 
 // 로그인 화면에서만 쓰므로 방문자가 받는 파일에 포함하지 않습니다.
 const identity = () => import('@netlify/identity');
 
-/** 초대·비밀번호 재설정 메일의 링크로 들어오면 새 비밀번호를 받습니다. */
-type Mode = { type: 'login' } | { type: 'invite'; token: string } | { type: 'recovery' };
+/** 로그인, 비밀번호 재설정 메일 요청, 메일 링크로 들어온 뒤의 새 비밀번호 설정을 처리합니다. */
+type Mode = 'login' | 'forgot' | 'recovery';
 
 export function LoginForm({ onDone }: { onDone: () => void }) {
-  const [mode, setMode] = useState<Mode>({ type: 'login' });
+  const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [pending, setPending] = useState(false);
   const alertRef = useRef<HTMLParagraphElement>(null);
   const refreshSession = useRefreshSession();
 
   useEffect(() => {
-    if (!/(invite|recovery|confirmation|access)_token=/.test(window.location.hash)) return;
+    if (!/(recovery|confirmation|access)_token=/.test(window.location.hash)) return;
     let active = true;
     identity()
       .then(({ handleAuthCallback }) => handleAuthCallback())
       .then((result) => {
         if (!active) return;
-        if (result?.type === 'invite' && result.token) setMode({ type: 'invite', token: result.token });
-        else if (result?.type === 'recovery') setMode({ type: 'recovery' });
+        if (result?.type === 'recovery') setMode('recovery');
         else if (result) void refreshSession().then(onDone);
       })
       .catch(() => {
@@ -60,28 +65,35 @@ export function LoginForm({ onDone }: { onDone: () => void }) {
     event.preventDefault();
     if (pending) return;
     setError('');
+    setNotice('');
     setPending(true);
     try {
       const auth = await identity();
-      if (mode.type === 'invite') await auth.acceptInvite(mode.token, password);
-      else if (mode.type === 'recovery') await auth.updateUser({ password });
+      if (mode === 'forgot') {
+        await auth.requestPasswordRecovery(email);
+        setNotice('가입한 이메일이면 비밀번호 재설정 메일이 도착합니다.');
+        return;
+      }
+      if (mode === 'recovery') await auth.updateUser({ password });
       else await auth.login(email, password);
       await refreshSession();
       onDone();
     } catch {
       setError(
-        mode.type === 'login'
+        mode === 'login'
           ? '이메일이나 비밀번호가 맞지 않습니다.'
-          : '비밀번호를 설정하지 못했습니다. 다시 시도해 주세요.',
+          : '요청을 처리하지 못했습니다. 다시 시도해 주세요.',
       );
     } finally {
       setPending(false);
     }
   };
 
+  const submitLabel = { login: '로그인', forgot: '재설정 메일 받기', recovery: '비밀번호 설정' }[mode];
+
   return (
     <form css={formCss} onSubmit={handleSubmit}>
-      {mode.type === 'login' && (
+      {mode !== 'recovery' && (
         <Field label="이메일" required>
           {(control) => (
             <input
@@ -95,27 +107,40 @@ export function LoginForm({ onDone }: { onDone: () => void }) {
           )}
         </Field>
       )}
-      <Field label={mode.type === 'login' ? '비밀번호' : '새 비밀번호'} required>
-        {(control) => (
-          <input
-            {...control}
-            css={inputCss}
-            type="password"
-            autoComplete={mode.type === 'login' ? 'current-password' : 'new-password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        )}
-      </Field>
+      {mode !== 'forgot' && (
+        <Field label={mode === 'login' ? '비밀번호' : '새 비밀번호'} required>
+          {(control) => (
+            <input
+              {...control}
+              css={inputCss}
+              type="password"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          )}
+        </Field>
+      )}
       {error && (
         <p ref={alertRef} role="alert" tabIndex={-1} css={alertCss}>
           {error}
         </p>
       )}
-      <div>
+      <output css={{ display: 'block' }}>{notice}</output>
+      <div css={actionsCss}>
         <Button type="submit" disabled={pending}>
-          {pending ? '확인 중…' : mode.type === 'login' ? '로그인' : '비밀번호 설정'}
+          {pending ? '확인 중…' : submitLabel}
         </Button>
+        {mode === 'login' && (
+          <Button variant="outline" onClick={() => setMode('forgot')}>
+            비밀번호 찾기
+          </Button>
+        )}
+        {mode === 'forgot' && (
+          <Button variant="outline" onClick={() => setMode('login')}>
+            로그인으로 돌아가기
+          </Button>
+        )}
       </div>
     </form>
   );

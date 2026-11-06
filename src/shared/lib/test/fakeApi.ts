@@ -2,39 +2,75 @@ import { vi } from 'vitest';
 
 type Row = Record<string, unknown> & { id: string };
 
-export const sampleReview = (patch: Partial<Row> = {}): Row => ({
-  id: 'sample-1',
+export const sampleMovie = (patch: Partial<Row> = {}): Row => ({
+  id: 'last-screening',
   title: '마지막 상영',
+  originalTitle: 'Ultima Proiecție',
   year: 2025,
-  rating: 5,
+  country: '루마니아',
+  language: '루마니아어',
   genres: ['드라마'],
+  director: '일리에 바르부',
+  writer: '소린 마테이',
+  cast: ['도이나 칼린', '미르체아 온치우'],
+  runtimeMinutes: 112,
+  ageRating: '12',
+  advisories: ['주제'],
+  moods: ['잔잔한'],
+  audioLanguages: ['루마니아어'],
+  subtitleLanguages: ['한국어', '영어'],
+  synopsis: '문 닫는 동네 극장의 마지막 밤.',
+  importNote: '영화제 상영에 그쳤던 작품을 들여왔습니다.',
+  firstImport: true,
+  releasedOn: '2026-10-30',
   poster: '/seed/a-poster.svg',
-  body: {
-    type: 'doc',
-    content: [
-      { type: 'paragraph', content: [{ type: 'text', text: '문 닫는 극장의 마지막 밤.' }] },
-      { type: 'image', attrs: { src: '/seed/a-scene.svg', alt: '붉은 노을 풍경' } },
-    ],
-  },
-  createdAt: '2026-10-28T09:00:00.000Z',
-  updatedAt: '2026-10-28T09:00:00.000Z',
+  backdrop: '/seed/a-backdrop.svg',
   ...patch,
 });
 
+const FACETS = {
+  years: [2026, 2025],
+  countries: ['루마니아', '칠레'],
+  directors: ['일리에 바르부'],
+  actors: ['도이나 칼린'],
+  ageRatings: ['all', '12', '15'],
+};
+
+const PRICES: Record<string, number> = { basic: 7900, standard: 10900, premium: 13900 };
+
 interface Options {
-  reviews?: Row[];
-  isCritic?: boolean;
+  movies?: Row[];
+  user?: { id: string; email: string; name: string | null } | null;
+  subscription?: Record<string, unknown> | null;
 }
 
+export const member = { id: 'u1', email: 'member@example.com', name: '시네필' };
+
+export const activeSubscription = (plan: string) => ({
+  plan,
+  pendingPlan: null,
+  status: 'active',
+  cancelAtPeriodEnd: false,
+  startedAt: '2026-11-06T00:00:00.000Z',
+  currentPeriodEnd: '2026-12-06T00:00:00.000Z',
+});
+
 /** fetch를 메모리 안의 API로 바꿉니다. fail에 넣은 요청은 500으로 답합니다. */
-export function installFakeApi({ reviews = [sampleReview()], isCritic = true }: Options = {}) {
+export function installFakeApi({
+  movies = [sampleMovie()],
+  user = member,
+  subscription = null,
+}: Options = {}) {
   const state = {
-    reviews: [...reviews],
-    isCritic,
+    movies: [...movies],
+    user,
+    subscription,
+    payments: [] as Record<string, unknown>[],
     calls: [] as { method: string; path: string; body?: unknown }[],
     fail: null as null | ((method: string, path: string) => boolean),
     hold: null as null | Promise<void>,
   };
+  const subscriptionData = () => ({ subscription: state.subscription, payments: state.payments });
 
   vi.stubGlobal('fetch', async (input: string, init: RequestInit = {}) => {
     const method = init.method ?? 'GET';
@@ -43,28 +79,64 @@ export function installFakeApi({ reviews = [sampleReview()], isCritic = true }: 
     await state.hold;
     if (state.fail?.(method, input)) return new Response(null, { status: 500 });
 
-    if (input === '/api/me') return Response.json({ isCritic: state.isCritic });
-    if (input === '/api/images') return Response.json({ url: '/api/images/uploaded.png' }, { status: 201 });
-    if (input === '/api/reviews') {
-      if (method === 'GET') return Response.json(state.reviews);
-      const created = {
-        ...body,
-        id: 'new-id',
-        createdAt: '2026-11-01T00:00:00.000Z',
-        updatedAt: '2026-11-01T00:00:00.000Z',
-      };
-      state.reviews.unshift(created);
-      return Response.json(created, { status: 201 });
+    const url = new URL(input, 'http://localhost');
+    const path = url.pathname;
+
+    if (path === '/api/me') return Response.json({ user: state.user });
+    if (path === '/api/movie-facets') return Response.json(FACETS);
+    if (path === '/api/home') {
+      return Response.json({
+        featured: state.movies[0] ?? null,
+        rows: state.movies.length
+          ? [{ title: '국내 첫 공개', query: 'firstImport=true&status=now', movies: state.movies }]
+          : [],
+      });
     }
-    const id = decodeURIComponent(input.replace('/api/reviews/', ''));
-    const index = state.reviews.findIndex((review) => review.id === id);
-    if (index < 0) return Response.json({ error: 'not_found' }, { status: 404 });
-    if (method === 'DELETE') {
-      state.reviews.splice(index, 1);
-      return new Response(null, { status: 204 });
+    if (path === '/api/movies') {
+      const q = url.searchParams.get('q');
+      const genre = url.searchParams.get('genre');
+      const items = state.movies.filter(
+        (movie) =>
+          (!q || String(movie.title).includes(q)) && (!genre || (movie.genres as string[]).includes(genre)),
+      );
+      return Response.json({ items, total: items.length, page: 1, pageSize: 24 });
     }
-    if (method === 'PUT') state.reviews[index] = { ...state.reviews[index], ...body };
-    return Response.json(state.reviews[index]);
+    if (path === '/api/subscription') {
+      if (!state.user) return Response.json({ error: 'unauthorized' }, { status: 401 });
+      if (method === 'POST') {
+        if (body.simulateFailure) return Response.json({ error: 'payment_failed' }, { status: 402 });
+        state.subscription = activeSubscription(body.plan);
+        state.payments.unshift({
+          id: 'p1',
+          plan: body.plan,
+          amount: PRICES[body.plan],
+          kind: 'new',
+          status: 'paid',
+          createdAt: '2026-11-06T00:00:00.000Z',
+        });
+        return Response.json(subscriptionData(), { status: 201 });
+      }
+      if (method === 'PATCH') {
+        if (body.action === 'cancel') state.subscription = { ...state.subscription, cancelAtPeriodEnd: true };
+        if (body.action === 'resume')
+          state.subscription = { ...state.subscription, cancelAtPeriodEnd: false };
+        if (body.action === 'change') state.subscription = { ...state.subscription, plan: body.plan };
+      }
+      return Response.json(subscriptionData());
+    }
+
+    const playback = path.match(/^\/api\/movies\/([^/]+)\/playback$/);
+    if (playback) {
+      const movie = state.movies.find((row) => row.id === decodeURIComponent(playback[1]));
+      if (!movie) return Response.json({ error: 'not_found' }, { status: 404 });
+      if (!state.user) return Response.json({ error: 'login_required' }, { status: 401 });
+      if (!state.subscription) return Response.json({ error: 'plan_required' }, { status: 403 });
+      return Response.json({ quality: 'FHD' });
+    }
+
+    const id = decodeURIComponent(path.replace('/api/movies/', ''));
+    const found = state.movies.find((movie) => movie.id === id);
+    return found ? Response.json(found) : Response.json({ error: 'not_found' }, { status: 404 });
   });
 
   return { state };

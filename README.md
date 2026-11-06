@@ -1,37 +1,42 @@
 # AboutMovie
 
 [![CI](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml)
-[![version](https://img.shields.io/badge/version-2.0.0-a82c0c)](https://github.com/ryushin01/AboutMovie/releases/latest)
+[![version](https://img.shields.io/badge/version-3.0.0-a82c0c)](https://github.com/ryushin01/AboutMovie/releases/latest)
 
-평론가 한 사람이 쓴 장문의 영화 리뷰를 싣는 사이트입니다.
+시네필을 위한 영화 전문 OTT입니다. 시리즈도 예능도 없이 영화만 다루고, 국내에 수입되지 않은 영화를 누구보다 먼저 들여와 보여 줍니다.
 
-**[사이트 보기](https://about-movie-ryushin.netlify.app/)** · 방문자는 가입 없이 읽고, 글은 운영자 계정으로만 씁니다.
+**[사이트 보기](https://about-movie-ryushin.netlify.app/)** · 작품은 가입 없이 둘러보고, 재생은 회원가입과 이용권으로 엽니다.
 
-> **프로젝트 상태:** **포트폴리오 프로젝트**입니다. 실제 평론가가 운영하는 사이트가 아니며, 처음 보이는 영화와 리뷰는 모두 가상 데이터입니다.
+> **프로젝트 상태:** **포트폴리오 프로젝트**입니다. 실제 서비스가 아니며, 영화와 인물은 모두 가상 데이터입니다. 결제는 실제 돈이 오가지 않는 가상 결제이고, 재생 화면은 권한 확인까지 구현했을 뿐 실제 영상은 나오지 않습니다.
 
 ## 화면
 
-화면의 영화와 리뷰는 모두 가상 데이터이고, 포스터와 본문 이미지는 코드로 그린 것입니다.
+화면의 영화와 인물은 모두 가상 데이터이고, 포스터와 배경 이미지는 코드로 그린 것입니다.
 
-![가로로 넘기는 포스터 목록에서 리뷰 쓰기로 이동해 서식 도구로 본문을 쓰고 이미지를 넣어 저장한 뒤 상세 화면과 라이트 모드, 새 글이 맨 위에 놓인 목록을 차례로 보여 주는 시연](docs/images/demo.gif)
+![메인에서 국내 첫 공개작을 둘러본 뒤 리스트에서 장르와 조건으로 걸러 작품 상세로 들어가고, 이용권을 가상 결제해 재생 화면까지 가는 시연](docs/images/demo.gif)
 
-| 목록 (다크 모드) | 목록 (라이트 모드) |
+| 메인 (다크 모드) | 메인 (라이트 모드) |
 |---|---|
-| ![검은 배경에 대표 리뷰가 크게 놓이고 아래로 가상 영화 포스터가 가로로 나열된 목록 화면](docs/images/home-dark.jpg) | ![밝은 배경에 대표 리뷰가 크게 놓이고 아래로 가상 영화 포스터가 가로로 나열된 목록 화면](docs/images/home-light.jpg) |
+| ![국내 첫 공개작 소개가 크게 놓이고 아래로 가상 영화 포스터가 가로로 나열된 어두운 메인 화면](docs/images/home-dark.jpg) | ![국내 첫 공개작 소개가 크게 놓이고 아래로 가상 영화 포스터가 가로로 나열된 밝은 메인 화면](docs/images/home-light.jpg) |
 
-| 리뷰 상세 | 리뷰 쓰기 |
+| 리스트 | 디테일 |
 |---|---|
-| ![대형 영화 제목 아래에 포스터, 평점, 리뷰 본문, 수정과 삭제 버튼이 놓인 상세 화면](docs/images/detail-dark.jpg) | ![제목, 개봉 연도, 평점, 장르, 포스터 이미지를 입력하고 서식 도구가 있는 편집기로 본문을 쓰는 작성 화면](docs/images/write-light.jpg) |
+| ![검색어, 장르, 공개 상태, 연도, 국가, 등급, 러닝타임, 감독, 배우 필터 아래로 포스터가 격자로 놓인 리스트 화면](docs/images/list-dark.jpg) | ![포스터와 제목, 원제, 관람 등급, 러닝타임, 줄거리, 재생 버튼이 놓인 작품 상세 화면](docs/images/detail-dark.jpg) |
+
+| 이용권 | 재생 |
+|---|---|
+| ![베이직, 스탠다드, 프리미엄 이용권의 요금과 화질, 동시 시청 수를 비교하는 화면](docs/images/plans-light.jpg) | ![가상 자막과 화질 표시가 있는 화면 아래로 재생, 위치 슬라이더, 음소거, 자막 버튼이 놓인 재생 화면](docs/images/player-dark.jpg) |
 
 ## 주요 기능
 
-- 대표 리뷰와 최신·평론가 추천·장르별 포스터 줄. 화면 폭에 따라 한 줄에 2~8편이 보임
-- 장르 태그와 장르별 목록. 리뷰마다 TMDB 공식 장르 19개 중 여러 개 선택
-- 모든 방문자에게 같은 글이 공개되고, 로그인 없이 읽기 가능
-- 운영자 로그인. 쓰기 권한은 서버가 요청마다 역할로 확인
-- Tiptap 편집기: 제목, 굵게, 기울임, 밑줄, 인용, 목록, 링크, 본문 이미지 (이미지마다 대체 텍스트 필수). 글과 이미지를 번갈아 배치
-- 포스터와 본문 이미지 업로드 (장당 10MB 이하, 큰 이미지는 자동 축소)
-- 작성 중 나가기 전 확인
+- **메인 → 리스트 → 디테일**의 3단 구조. 메인은 국내 첫 공개작과 공개 예정작을 앞세움
+- 작품 정보: 제목, 원제, 제작 연도, 국가, 장르, 감독, 각본, 출연, 러닝타임, 관람 등급과 등급 사유, 음성·자막 언어, 분위기, 수입 이야기
+- 검색: 제목, 원제, 감독, 각본, 배우, 국가. 어느 화면에서든 머리글에서 검색
+- 필터: 장르, 제작 연도, 국가, 감독, 배우, 관람 등급, 러닝타임, 공개 상태, 국내 첫 공개작, 정렬. 조건이 주소에 남아 공유와 뒤로 가기가 그대로 동작
+- 회원가입, 로그인, 비밀번호 재설정
+- 이용권 3종과 가상 결제: 구독, 정기 결제, 올리기(차액 결제), 낮추기(다음 결제일 예약), 해지 예약과 취소, 만료, 결제 실패, 결제 내역
+- 재생 권한은 서버가 확인: 국내 첫 공개작은 스탠다드 이상, 공개 전 작품은 재생 불가
+- 재생 화면: 자동 재생 없음, 위치 이동, 자막, 음소거, 이용권별 화질 표시, 키보드 조작
 - 다크 모드 (처음에는 시스템 설정을 따르고, 고른 값을 기억)
 
 ## 기술 스택
@@ -42,8 +47,7 @@
 |---|---|
 | 프레임워크 | React 19, Vite 8, TypeScript 7, React Router 8 |
 | 상태·데이터 | TanStack Query v5 |
-| 서버 | Netlify Functions, Netlify Database (PostgreSQL), Netlify Blobs (이미지), Netlify Identity (로그인) |
-| 편집기 | Tiptap 3 |
+| 서버 | Netlify Functions, Netlify Database (PostgreSQL), Netlify Identity (회원) |
 | 스타일 | Emotion, Pretendard |
 | 품질 | oxlint, Prettier, Vitest + React Testing Library, Playwright + axe (Chromium, Firefox, WebKit E2E) |
 | 배포 | Netlify, GitHub Actions |
@@ -56,11 +60,11 @@ Node.js 26(`.nvmrc`)과 pnpm이 필요합니다.
 ```bash
 nvm use
 pnpm install
-pnpm dev         # http://localhost:5173 (함수·DB·이미지 저장소를 로컬에서 흉내 냄)
+pnpm dev         # http://localhost:5173 (함수와 DB를 로컬에서 흉내 냄)
 pnpm db:migrate  # 처음 한 번, pnpm dev를 켠 채로 다른 터미널에서 실행
 ```
 
-로그인은 로컬에서 동작하지 않아 운영자로 간주합니다. 배포 준비는 [개발 가이드](docs/development.md#배포-전-설정)를 참고하세요.
+회원 기능은 로컬에서 동작하지 않아 가상의 회원으로 로그인한 것으로 봅니다. 배포 준비는 [개발 가이드](docs/development.md#배포-전-설정)를 참고하세요.
 
 | 명령 | 설명 |
 |---|---|
@@ -76,17 +80,17 @@ pnpm db:migrate  # 처음 한 번, pnpm dev를 켠 채로 다른 터미널에서
 [Feature-Sliced Design](https://feature-sliced.design)을 따릅니다. 컴포넌트 옆에 `*.test.tsx`를 둡니다.
 
 ```
-.github/            CI
 docs/               개발 가이드, 접근성 점검, README 스크린샷
 e2e/                E2E 테스트
 netlify/            함수(API), 서버 로직, DB 마이그레이션
-public/seed/        가상 리뷰의 포스터와 장면
+public/seed/        가상 영화의 포스터와 배경
+scripts/            가상 영화 원고와 시드 생성
 src/
 ├─ app/             진입점, 라우터, 전역 스타일과 테마 색상
-├─ pages/           home, login, review-detail, review-new, review-edit, not-found
-├─ widgets/         site-layout (머리글, 본문 바로가기, 바닥글), review-row (가로 포스터 줄)
-├─ features/        review-form (편집기), delete-review, login, logout, toggle-theme
-├─ entities/        review (API, 본문 규칙, 카드), session (로그인 상태)
+├─ pages/           home, movie-list, movie-detail, watch, plans, checkout, account, login, signup, not-found
+├─ widgets/         site-layout (머리글, 본문 바로가기, 바닥글), movie-row (가로 포스터 줄)
+├─ features/        search-movies, filter-movies, subscribe, manage-subscription, login, signup, logout, toggle-theme
+├─ entities/        movie (작품, 검색 조건), subscription (이용권, 재생 권한), session (로그인 상태)
 └─ shared/          공통 UI, 경로, 유틸리티
 ```
 

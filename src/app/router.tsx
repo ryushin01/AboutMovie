@@ -1,22 +1,24 @@
 import { useEffect } from 'react';
 import { createBrowserRouter, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router';
-import { GenrePage } from '@/pages/genre';
+import { AccountPage } from '@/pages/account';
+import { CheckoutPage } from '@/pages/checkout';
 import { HomePage } from '@/pages/home';
 import { LoginPage } from '@/pages/login';
+import { MovieDetailPage } from '@/pages/movie-detail';
+import { MovieListPage } from '@/pages/movie-list';
 import { NotFoundPage } from '@/pages/not-found';
-import { ReviewDetailPage } from '@/pages/review-detail';
-import { ReviewEditPage } from '@/pages/review-edit';
-import { ReviewNewPage } from '@/pages/review-new';
+import { PlansPage } from '@/pages/plans';
+import { SignupPage } from '@/pages/signup';
+import { WatchPage } from '@/pages/watch';
 import { SiteLayout } from '@/widgets/site-layout';
 
 function Root() {
   const { hash } = useLocation();
   const navigate = useNavigate();
 
-  // 초대·비밀번호 재설정 메일의 링크는 사이트 첫 화면으로 들어옵니다. 토큰을 처리할 로그인 화면으로 넘깁니다.
+  // 가입 확인·비밀번호 재설정 메일의 링크는 사이트 첫 화면으로 들어옵니다. 토큰을 처리할 로그인 화면으로 넘깁니다.
   useEffect(() => {
-    if (/(invite|recovery|confirmation|access)_token=/.test(hash))
-      navigate(`/login${hash}`, { replace: true });
+    if (/(recovery|confirmation|access)_token=/.test(hash)) navigate(`/login${hash}`, { replace: true });
   }, [hash, navigate]);
 
   return (
@@ -36,11 +38,14 @@ export const router = createBrowserRouter(
           element: <SiteLayout />,
           children: [
             { path: '/', element: <HomePage /> },
+            { path: '/movies', element: <MovieListPage /> },
+            { path: '/movies/:id', element: <MovieDetailPage /> },
+            { path: '/watch/:id', element: <WatchPage /> },
+            { path: '/plans', element: <PlansPage /> },
+            { path: '/checkout/:plan', element: <CheckoutPage /> },
+            { path: '/account', element: <AccountPage /> },
             { path: '/login', element: <LoginPage /> },
-            { path: '/genres/:genre', element: <GenrePage /> },
-            { path: '/reviews/new', element: <ReviewNewPage /> },
-            { path: '/reviews/:id', element: <ReviewDetailPage /> },
-            { path: '/reviews/:id/edit', element: <ReviewEditPage /> },
+            { path: '/signup', element: <SignupPage /> },
             { path: '*', element: <NotFoundPage /> },
           ],
         },

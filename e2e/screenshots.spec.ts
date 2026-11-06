@@ -1,50 +1,53 @@
 import { expect, test } from '@playwright/test';
-import { installFakeApi } from './fakeApi';
+import { installFakeApi, MEMBER } from './fakeApi';
 
-// README 스크린샷을 만듭니다. `pnpm screenshots`로 실행합니다.
+// README 스크린샷을 만듭니다. `pnpm screenshots`로 실행합니다. 화면의 데이터는 모두 가상입니다.
 test.skip(!process.env.SCREENSHOTS, 'SCREENSHOTS=1일 때만 실행합니다.');
 
 const shot = (name: string) => ({ path: `docs/images/${name}.jpg`, type: 'jpeg' as const, quality: 80 });
 
 test('화면 캡처', async ({ browser, baseURL }) => {
-  const desktop = await browser.newContext({
-    baseURL,
-    viewport: { width: 1440, height: 900 },
-    colorScheme: 'dark',
-  });
+  test.setTimeout(60_000);
+  const viewport = { width: 1440, height: 900 };
+  const desktop = await browser.newContext({ baseURL, viewport, colorScheme: 'dark' });
   const page = await desktop.newPage();
-  await installFakeApi(page);
+  await installFakeApi(page, { user: MEMBER, plan: 'standard' });
+
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: '최신 리뷰' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '국내 첫 공개' })).toBeVisible();
   await page.waitForLoadState('networkidle');
   await page.screenshot(shot('home-dark'));
 
   await page.setViewportSize({ width: 1200, height: 630 });
   await page.screenshot({ path: 'public/og-image.jpg', type: 'jpeg', quality: 85 });
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setViewportSize(viewport);
 
-  await page.goto('/reviews/sample-last-screening');
-  await expect(page.getByAltText('마지막 상영 포스터')).toBeVisible();
+  await page.goto('/movies?genre=%EB%93%9C%EB%9D%BC%EB%A7%88');
+  await expect(page.locator('main output')).toContainText('영화');
+  await page.getByText('상세 필터').click();
+  await page.waitForLoadState('networkidle');
+  await page.screenshot(shot('list-dark'));
+
+  await page.goto('/movies/glass-orbit');
+  await expect(page.getByRole('link', { name: '재생' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
   await page.screenshot(shot('detail-dark'));
+
+  await page.goto('/watch/glass-orbit');
+  await expect(page.getByRole('slider', { name: '재생 위치' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await page.screenshot(shot('player-dark'));
   await desktop.close();
 
-  const light = await browser.newContext({
-    baseURL,
-    viewport: { width: 1440, height: 900 },
-    colorScheme: 'light',
-  });
+  const light = await browser.newContext({ baseURL, viewport, colorScheme: 'light' });
   const lightPage = await light.newPage();
   await installFakeApi(lightPage);
   await lightPage.goto('/');
-  await expect(lightPage.getByRole('heading', { level: 2, name: '최신 리뷰' })).toBeVisible();
+  await expect(lightPage.getByRole('region', { name: '국내 첫 공개' })).toBeVisible();
   await lightPage.waitForLoadState('networkidle');
   await lightPage.screenshot(shot('home-light'));
-
-  await lightPage.goto('/reviews/new');
-  const toolbar = lightPage.getByRole('toolbar', { name: '글 서식' });
-  await expect(toolbar).toBeVisible();
-  // 입력 칸 일부와 편집기가 함께 보이게 내립니다.
-  await lightPage.evaluate(() => window.scrollTo(0, 560));
-  await lightPage.screenshot(shot('write-light'));
+  await lightPage.goto('/plans');
+  await expect(lightPage.getByText('월 7,900원')).toBeVisible();
+  await lightPage.screenshot(shot('plans-light'));
   await light.close();
 });

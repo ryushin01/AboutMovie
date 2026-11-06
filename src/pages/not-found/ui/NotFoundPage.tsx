@@ -9,7 +9,7 @@ export function NotFoundPage() {
   return (
     <PageMessage title="페이지를 찾을 수 없습니다">
       <Link to={routes.home} css={buttonCss()}>
-        목록으로
+        메인으로
       </Link>
     </PageMessage>
   );

@@ -1,18 +1,22 @@
-import { useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { LoginForm } from '@/features/login';
-import { routes } from '@/shared/config/routes';
+import { routes, safeNext } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
 import { formTitleCss } from '@/shared/ui/styles';
 
 export function LoginPage() {
-  useDocumentTitle('운영자 로그인');
+  useDocumentTitle('로그인');
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = params.get('next');
 
   return (
     <>
-      <h1 css={formTitleCss}>운영자 로그인</h1>
-      <p css={{ margin: '0 0 32px', color: 'var(--muted)' }}>리뷰를 쓰는 평론가 계정으로 로그인합니다.</p>
-      <LoginForm onDone={() => navigate(routes.home, { replace: true })} />
+      <h1 css={formTitleCss}>로그인</h1>
+      <LoginForm onDone={() => navigate(safeNext(next), { replace: true })} />
+      <p css={{ margin: '32px 0 0' }}>
+        아직 회원이 아니신가요? <Link to={routes.signup(next ?? undefined)}>회원가입</Link>
+      </p>
     </>
   );
 }

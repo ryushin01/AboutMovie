@@ -1,0 +1,92 @@
+import { screen } from '@testing-library/react';
+import { Route, Routes } from 'react-router';
+import { describe, expect, it } from 'vitest';
+import { activeSubscription, installFakeApi, sampleMovie } from '@/shared/lib/test/fakeApi';
+import { renderWithProviders } from '@/shared/lib/test/renderWithProviders';
+import { MovieDetailPage } from './MovieDetailPage';
+
+const view = (path = '/movies/last-screening') =>
+  renderWithProviders(
+    <Routes>
+      <Route path="/movies/:id" element={<MovieDetailPage />} />
+    </Routes>,
+    path,
+  );
+
+describe('MovieDetailPage', () => {
+  it('작품 정보를 보여 주고 사람과 연도는 리스트 필터로 잇는다', async () => {
+    installFakeApi();
+    view();
+    expect(await screen.findByRole('heading', { level: 1, name: '마지막 상영' })).toBeInTheDocument();
+    expect(screen.getByText('Ultima Proiecție')).toBeInTheDocument();
+    expect(screen.getByText('12세 이상 관람가', { selector: 'li' })).toBeInTheDocument();
+    expect(screen.getByText('1시간 52분 (112분)')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '도이나 칼린' })).toHaveAttribute(
+      'href',
+      `/movies?actor=${encodeURIComponent('도이나 칼린').replaceAll('%20', '+')}`,
+    );
+    expect(screen.getByRole('link', { name: '2025년' })).toHaveAttribute('href', '/movies?year=2025');
+    expect(screen.getByRole('heading', { name: '수입 이야기' })).toBeInTheDocument();
+  });
+
+  it('방문자에게는 로그인을 안내하고 돌아올 주소를 넘긴다', async () => {
+    installFakeApi({ user: null });
+    view();
+    expect(await screen.findByRole('link', { name: '로그인하고 보기' })).toHaveAttribute(
+      'href',
+      `/login?next=${encodeURIComponent('/movies/last-screening')}`,
+    );
+  });
+
+  it('이용권이 없으면 이용권 구매로 안내한다', async () => {
+    installFakeApi();
+    view();
+    expect(await screen.findByRole('link', { name: '이용권 구매하고 보기' })).toHaveAttribute(
+      'href',
+      '/plans',
+    );
+  });
+
+  it('베이직은 국내 첫 공개작을 볼 수 없어 이용권 변경을 안내한다', async () => {
+    installFakeApi({ subscription: activeSubscription('basic') });
+    view();
+    expect(await screen.findByRole('link', { name: '이용권 올리고 보기' })).toHaveAttribute(
+      'href',
+      '/account',
+    );
+  });
+
+  it('베이직도 일반 작품은 재생할 수 있다', async () => {
+    installFakeApi({
+      movies: [sampleMovie({ firstImport: false })],
+      subscription: activeSubscription('basic'),
+    });
+    view();
+    expect(await screen.findByRole('link', { name: '재생' })).toHaveAttribute(
+      'href',
+      '/watch/last-screening',
+    );
+  });
+
+  it('스탠다드는 국내 첫 공개작을 재생할 수 있다', async () => {
+    installFakeApi({ subscription: activeSubscription('standard') });
+    view();
+    expect(await screen.findByRole('link', { name: '재생' })).toBeInTheDocument();
+  });
+
+  it('공개 전 작품은 공개일만 안내한다', async () => {
+    installFakeApi({
+      movies: [sampleMovie({ releasedOn: '2999-01-15' })],
+      subscription: activeSubscription('premium'),
+    });
+    view();
+    expect(await screen.findByText('2999.01.15 공개 예정')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '재생' })).not.toBeInTheDocument();
+  });
+
+  it('없는 작품을 안내한다', async () => {
+    installFakeApi();
+    view('/movies/none');
+    expect(await screen.findByRole('heading', { name: '영화를 찾을 수 없습니다' })).toBeInTheDocument();
+  });
+});
