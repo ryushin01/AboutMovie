@@ -157,13 +157,15 @@ interface Options {
   user?: FakeUser | null;
   plan?: 'basic' | 'standard' | 'premium' | null;
   movies?: FakeMovie[];
+  /** 운영 설정처럼 가입 뒤 메일 확인을 요구합니다. */
+  requireEmailConfirmation?: boolean;
 }
 
 export const MEMBER: FakeUser = { id: 'u1', email: 'member@example.com', name: '시네필' };
 
 export async function installFakeApi(
   page: Page,
-  { user = null, plan = null, movies = seedMovies() }: Options = {},
+  { user = null, plan = null, movies = seedMovies(), requireEmailConfirmation = false }: Options = {},
 ) {
   const subscriptionFor = (id: string) => ({
     plan: id,
@@ -295,11 +297,16 @@ export async function installFakeApi(
       user_metadata: { full_name: '새 시네필' },
     };
     if (url.pathname.endsWith('/signup') || url.pathname.endsWith('/user')) {
-      if (url.pathname.endsWith('/signup'))
+      if (url.pathname.endsWith('/signup')) {
+        if (requireEmailConfirmation) {
+          const { confirmed_at: _confirmedAt, ...unconfirmed } = json;
+          return route.fulfill({ json: unconfirmed });
+        }
         state.user = { id: json.id, email: json.email, name: '새 시네필' };
+      }
       return route.fulfill({ json });
     }
-    if (url.pathname.endsWith('/token')) {
+    if (url.pathname.endsWith('/token') || url.pathname.endsWith('/verify')) {
       state.user = state.user ?? MEMBER;
       const payload = Buffer.from(JSON.stringify({ exp: 4102444800, sub: json.id })).toString('base64url');
       return route.fulfill({

@@ -80,7 +80,12 @@ export function SignupForm({ onDone }: { onDone: () => void }) {
   };
 
   if (sentTo) {
-    return <output>{sentTo}로 확인 메일을 보냈습니다. 메일의 링크를 누르면 가입이 끝납니다.</output>;
+    return (
+      <output>
+        {sentTo}로 확인 메일을 보냈습니다. 메일의 링크를 누르면 가입이 끝납니다. 메일이 보이지 않으면 스팸함을
+        확인해 주세요.
+      </output>
+    );
   }
 
   return (
