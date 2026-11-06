@@ -460,7 +460,11 @@ test('화면 폭에 따라 한 줄의 카드 수가 달라지고 다음 버튼�
   browser,
   baseURL,
 }) => {
-  const context = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 } });
+  const context = await browser.newContext({
+    baseURL,
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: 'reduce',
+  });
   const page = await context.newPage();
   await installFakeApi(page);
   await page.goto('/');
@@ -468,6 +472,8 @@ test('화면 폭에 따라 한 줄의 카드 수가 달라지고 다음 버튼�
   await expect(list.getByRole('listitem').first()).toBeVisible();
   const ratio = await list.evaluate((element) => element.clientWidth / element.children[0].clientWidth);
   expect(ratio).toBeGreaterThan(6);
+  // 부드러운 스크롤은 로딩 중 레이아웃이 바뀌면 끊길 수 있어, 애니메이션을 끄고 로딩이 끝난 뒤 누릅니다.
+  await page.waitForLoadState('networkidle');
 
   await page.getByRole('button', { name: '최근 공개 다음 목록' }).click();
   await expect.poll(() => list.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
