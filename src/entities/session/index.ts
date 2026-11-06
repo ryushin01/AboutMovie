@@ -1,2 +1,2 @@
-export { useClearSession, useRefreshSession, useSession } from './api/useSession';
-export { RequireCritic } from './ui/RequireCritic';
+export { useClearSession, useRefreshSession, useSession, type SessionUser } from './api/useSession';
+export { RequireAuth } from './ui/RequireAuth';

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useSession } from '@/entities/session';
 import { LogoutButton } from '@/features/logout';
+import { MovieSearch } from '@/features/search-movies';
 import { ThemeToggle } from '@/features/toggle-theme';
 import { routes } from '@/shared/config/routes';
 import { buttonCss } from '@/shared/ui/Button';
@@ -41,6 +42,16 @@ const navCss = css`
   flex-wrap: wrap;
   gap: 8px;
 `;
+const navLinkCss = css`
+  ${buttonCss('outline')}
+  padding-inline: 14px;
+
+  /* 색만으로 구분하지 않도록 지금 화면은 밑줄도 긋습니다. */
+  &[aria-current='page'] {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+`;
 const mainCss = css`
   /* 내용이 늦게 그려져도 바닥글이 밀려 내려가지 않게 합니다. */
   min-height: 100svh;
@@ -59,7 +70,7 @@ const footerCss = css`
 `;
 
 export function SiteLayout() {
-  const { isCritic } = useSession();
+  const { user } = useSession();
   const { pathname } = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef(pathname);
@@ -80,13 +91,29 @@ export function SiteLayout() {
         <Link to={routes.home} css={logoCss}>
           AboutMovie
         </Link>
+        <MovieSearch />
         <nav aria-label="주요 메뉴" css={navCss}>
-          {isCritic && (
+          <NavLink to={routes.movies()} css={navLinkCss}>
+            영화
+          </NavLink>
+          <NavLink to={routes.plans} css={navLinkCss}>
+            이용권
+          </NavLink>
+          {user ? (
             <>
-              <NavLink to={routes.newReview} css={buttonCss()}>
-                리뷰 쓰기
+              <NavLink to={routes.account} css={navLinkCss}>
+                내 계정
               </NavLink>
               <LogoutButton />
+            </>
+          ) : (
+            <>
+              <NavLink to={routes.login()} css={navLinkCss}>
+                로그인
+              </NavLink>
+              <NavLink to={routes.signup()} css={navLinkCss}>
+                회원가입
+              </NavLink>
             </>
           )}
           <ThemeToggle />
@@ -96,13 +123,10 @@ export function SiteLayout() {
         <Outlet />
       </main>
       <footer css={footerCss}>
-        <small>AboutMovie · 포트폴리오 프로젝트입니다. 영화와 리뷰는 모두 가상입니다.</small>
-        {!isCritic && (
-          <small>
-            {' '}
-            · <Link to={routes.login}>운영자 로그인</Link>
-          </small>
-        )}
+        <small>
+          AboutMovie · 포트폴리오 프로젝트입니다. 영화와 인물은 모두 가상이고, 결제는 실제로 이루어지지
+          않으며, 영상도 재생되지 않습니다.
+        </small>
       </footer>
     </>
   );

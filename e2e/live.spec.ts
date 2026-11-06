@@ -8,7 +8,7 @@ test.skip(!process.env.LIVE, 'LIVE=1일 때만 실행합니다.');
 // 다른 주소를 검사하려면 LIVE_URL로 넘깁니다.
 const SITE = (process.env.LIVE_URL ?? 'https://about-movie-ryushin.netlify.app').replace(/\/$/, '');
 
-test('배포된 사이트를 방문자로 읽을 수 있다', async ({ page }) => {
+test('배포된 사이트를 메인, 리스트, 디테일 순서로 볼 수 있다', async ({ page }) => {
   test.setTimeout(60_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -25,8 +25,8 @@ test('배포된 사이트를 방문자로 읽을 수 있다', async ({ page }) =
   });
 
   await page.goto(`${SITE}/`);
-  await expect(page.getByRole('heading', { level: 2, name: '최신 리뷰' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '리뷰 쓰기' })).toHaveCount(0);
+  const firstImports = page.getByRole('region', { name: '국내 첫 공개' });
+  await expect(firstImports).toBeVisible();
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -38,36 +38,34 @@ test('배포된 사이트를 방문자로 읽을 수 있다', async ({ page }) =
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => v.id)).toEqual([]);
 
-  await page.getByRole('region', { name: '최신 리뷰' }).getByRole('link').first().click();
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.getByRole('link', { name: '수정' })).toHaveCount(0);
-
-  await page.goto(`${SITE}/reviews/new`);
-  await expect(page.getByRole('heading', { level: 1, name: '운영자 로그인' })).toBeVisible();
+  await firstImports.getByRole('link', { name: '국내 첫 공개 전체 보기' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '영화 찾기' })).toBeVisible();
+  await page.getByLabel('검색어').fill('철의 항구');
+  await page.getByRole('button', { name: '적용' }).click();
+  await page.getByRole('link', { name: '철의 항구' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '철의 항구' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '로그인하고 보기' })).toBeVisible();
 
   expect(errors).toEqual([]);
 });
 
-test('로그인하지 않으면 쓰기 요청을 거부한다', async ({ request }) => {
+test('로그인하지 않으면 이용권과 재생을 거부한다', async ({ request }) => {
   const options = { headers: { Origin: SITE } };
-  expect((await request.get(`${SITE}/api/me`)).status()).toBe(200);
-  expect(await (await request.get(`${SITE}/api/me`)).json()).toEqual({ isCritic: false });
-  expect((await request.post(`${SITE}/api/reviews`, { ...options, data: {} })).status()).toBe(401);
+  expect(await (await request.get(`${SITE}/api/me`)).json()).toEqual({ user: null });
+  expect((await request.get(`${SITE}/api/subscription`)).status()).toBe(401);
   expect(
-    (await request.put(`${SITE}/api/reviews/sample-last-screening`, { ...options, data: {} })).status(),
+    (await request.post(`${SITE}/api/subscription`, { ...options, data: { plan: 'basic' } })).status(),
   ).toBe(401);
-  expect((await request.delete(`${SITE}/api/reviews/sample-last-screening`, options)).status()).toBe(401);
-  expect((await request.post(`${SITE}/api/images`, { ...options, data: { data: 'eA==' } })).status()).toBe(
-    401,
-  );
-  // 샘플 글이 그대로 있어야 합니다.
-  expect((await request.get(`${SITE}/api/reviews/sample-last-screening`)).status()).toBe(200);
+  expect(
+    (await request.patch(`${SITE}/api/subscription`, { ...options, data: { action: 'cancel' } })).status(),
+  ).toBe(401);
+  expect((await request.get(`${SITE}/api/movies/last-screening/playback`)).status()).toBe(401);
 });
 
-test('다른 사이트에서 온 쓰기 요청을 거부한다', async ({ request }) => {
-  const response = await request.post(`${SITE}/api/reviews`, {
+test('다른 사이트에서 온 이용권 요청을 거부한다', async ({ request }) => {
+  const response = await request.post(`${SITE}/api/subscription`, {
     headers: { Origin: 'https://evil.example' },
-    data: {},
+    data: { plan: 'basic' },
   });
   expect(response.status()).toBe(403);
 });
