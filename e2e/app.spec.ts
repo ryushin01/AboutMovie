@@ -429,7 +429,8 @@ test('포스터 이미지가 도착할 때까지 스켈레톤을 그리고, 움�
     await gate;
     await route.continue();
   });
-  await page.goto('/movies/last-screening');
+  // 붙잡아 둔 이미지 때문에 Firefox의 load 이벤트가 끝나지 않으므로 기다리지 않습니다.
+  await page.goto('/movies/last-screening', { waitUntil: 'commit' });
   const poster = page.getByAltText('마지막 상영 포스터');
   await expect(poster).toHaveAttribute('data-skeleton', 'poster');
   await expect(poster).toHaveCSS('animation-name', 'none');
