@@ -25,6 +25,14 @@ describe('parseMovieFilters', () => {
     );
     expect(Object.values(invalid).every((value) => value === undefined)).toBe(true);
   });
+  it('DB 정수 범위를 넘는 연도와 페이지는 버린다', () => {
+    const huge = parse('year=99999999999&page=99999999999');
+    expect(huge.year).toBeUndefined();
+    expect(huge.page).toBeUndefined();
+    expect(parse('year=10000').year).toBeUndefined();
+    expect(parse('year=2026&page=100000')).toMatchObject({ year: 2026, page: 100000 });
+    expect(parse('page=100001').page).toBeUndefined();
+  });
   it('긴 검색어는 자른다', () => {
     expect(parse(`q=${'가'.repeat(200)}`).q).toHaveLength(100);
   });

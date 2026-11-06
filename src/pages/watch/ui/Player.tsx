@@ -83,6 +83,12 @@ export function Player({ movie, quality }: { movie: Movie; quality: string }) {
     return () => clearInterval(timer);
   }, [running, duration]);
 
+  const toggle = () => {
+    // 끝까지 본 뒤에 누르면 처음부터 다시 봅니다.
+    if (position >= duration) setPosition(0);
+    setPlaying(!running);
+  };
+
   return (
     <section aria-label="재생 화면">
       <div css={screenCss}>
@@ -91,7 +97,7 @@ export function Player({ movie, quality }: { movie: Movie; quality: string }) {
         {subtitles && <p css={subtitleCss}>[가상 자막] 실제 영상은 재생되지 않습니다.</p>}
       </div>
       <div css={controlsCss}>
-        <Button onClick={() => setPlaying(!running)}>{running ? '일시정지' : '재생'}</Button>
+        <Button onClick={toggle}>{running ? '일시정지' : '재생'}</Button>
         <input
           css={seekCss}
           type="range"

@@ -1,7 +1,7 @@
 # AboutMovie
 
 [![CI](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml)
-[![version](https://img.shields.io/badge/version-3.0.0-a82c0c)](https://github.com/ryushin01/AboutMovie/releases/latest)
+[![version](https://img.shields.io/badge/version-3.0.1-a82c0c)](https://github.com/ryushin01/AboutMovie/releases/latest)
 
 시네필을 위한 영화 전문 OTT입니다. 시리즈도 예능도 없이 영화만 다루고, 국내에 수입되지 않은 영화를 누구보다 먼저 들여와 보여 줍니다.
 

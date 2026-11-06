@@ -42,6 +42,24 @@ describe('SiteLayout', () => {
     expect(screen.getByRole('link', { name: '로그인' })).toHaveAttribute('href', '/login');
   });
 
+  it('로그인 상태를 확인하는 동안에는 회원 메뉴와 방문자 메뉴를 모두 숨긴다', async () => {
+    const { state } = installFakeApi();
+    let release = () => {};
+    state.hold = new Promise((resolve) => {
+      release = resolve;
+    });
+    renderWithProviders(app);
+
+    expect(screen.getByRole('link', { name: '이용권' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '로그인' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '회원가입' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '내 계정' })).not.toBeInTheDocument();
+
+    release();
+    expect(await screen.findByRole('link', { name: '내 계정' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '회원가입' })).not.toBeInTheDocument();
+  });
+
   it('머리글 검색은 리스트로 이동한다', async () => {
     installFakeApi();
     renderWithProviders(app);

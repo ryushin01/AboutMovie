@@ -16,6 +16,9 @@ export type Status = keyof typeof STATUSES;
 
 export const PAGE_SIZE = 24;
 const MAX_TEXT = 100;
+// 범위를 넘는 값이 DB 정수로 바뀌다 오류를 내지 않게 합니다.
+const MAX_YEAR = 9999;
+const MAX_PAGE = 100000;
 
 export interface MovieFilters {
   q?: string;
@@ -35,9 +38,9 @@ export interface MovieFilters {
 const text = (value: string | null) => value?.trim().slice(0, MAX_TEXT) || undefined;
 const oneOf = <T extends string>(value: string | null, allowed: readonly T[]) =>
   allowed.includes(value as T) ? (value as T) : undefined;
-const positive = (value: string | null) => {
+const positive = (value: string | null, max: number) => {
   const number = Number(value);
-  return Number.isInteger(number) && number > 0 ? number : undefined;
+  return Number.isInteger(number) && number > 0 && number <= max ? number : undefined;
 };
 
 /** 주소의 검색 조건을 읽습니다. 화면과 서버가 함께 쓰며, 잘못된 값은 조건이 없는 것으로 봅니다. */
@@ -45,7 +48,7 @@ export function parseMovieFilters(params: URLSearchParams): MovieFilters {
   return {
     q: text(params.get('q')),
     genre: oneOf(params.get('genre'), GENRES),
-    year: positive(params.get('year')),
+    year: positive(params.get('year'), MAX_YEAR),
     country: text(params.get('country')),
     director: text(params.get('director')),
     actor: text(params.get('actor')),
@@ -54,7 +57,7 @@ export function parseMovieFilters(params: URLSearchParams): MovieFilters {
     status: oneOf(params.get('status'), Object.keys(STATUSES) as Status[]),
     firstImport: params.get('firstImport') === 'true' || undefined,
     sort: oneOf(params.get('sort'), Object.keys(SORTS) as Sort[]),
-    page: positive(params.get('page')),
+    page: positive(params.get('page'), MAX_PAGE),
   };
 }
 
