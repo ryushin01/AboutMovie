@@ -6,10 +6,10 @@ import { visuallyHidden } from '@/shared/ui/styles';
 
 const GAP = 'clamp(8px, 1vw, 16px)';
 
-const sectionCss = css`
+export const rowSectionCss = css`
   margin-top: clamp(28px, 3.5vw, 48px);
 `;
-const headCss = css`
+export const rowHeadCss = css`
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -17,7 +17,7 @@ const headCss = css`
   gap: 12px;
   margin-bottom: 12px;
 `;
-const titleCss = css`
+export const rowTitleCss = css`
   margin: 0;
   font-size: clamp(1.125rem, 1.8vw, 1.5rem);
   font-weight: 800;
@@ -64,7 +64,7 @@ const controlCss = css`
  * 화면 폭에 따라 한 줄에 보이는 카드 수가 달라집니다.
  * 소수점만큼 다음 카드가 살짝 보여 옆으로 더 있다는 것을 알려 줍니다.
  */
-const listCss = css`
+export const rowListCss = css`
   --cards: 2.3;
   display: grid;
   grid-auto-flow: column;
@@ -144,9 +144,9 @@ export function MovieRow({ title, movies, moreTo, notes }: Props) {
   };
 
   return (
-    <section aria-labelledby={titleId} css={sectionCss}>
-      <div css={headCss}>
-        <h2 id={titleId} css={titleCss}>
+    <section aria-labelledby={titleId} css={rowSectionCss}>
+      <div css={rowHeadCss}>
+        <h2 id={titleId} css={rowTitleCss}>
           {title}
         </h2>
         <div css={toolsCss}>
@@ -179,7 +179,7 @@ export function MovieRow({ title, movies, moreTo, notes }: Props) {
           )}
         </div>
       </div>
-      <ul ref={listRef} css={listCss}>
+      <ul ref={listRef} css={rowListCss}>
         {movies.map((movie) => (
           <li key={movie.id}>
             <MovieCard movie={movie} note={notes?.[movie.id]} />

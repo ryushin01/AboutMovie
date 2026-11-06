@@ -1,9 +1,11 @@
 import { css } from '@emotion/react';
 import { Link } from 'react-router';
-import { AGE_LABELS, formatRuntime, type Movie } from '@/entities/movie';
+import { AGE_LABELS, formatRuntime, MoviePoster, type Movie } from '@/entities/movie';
 import { routes } from '@/shared/config/routes';
 import { buttonCss } from '@/shared/ui/Button';
 import { visuallyHidden } from '@/shared/ui/styles';
+
+export const HOME_TITLE = '시네필을 위한 영화 전문 OTT. 아직 수입되지 않은 영화를 가장 먼저 만나세요.';
 
 const heroCss = css`
   position: relative;
@@ -97,7 +99,7 @@ export function FeaturedMovie({ movie }: { movie: Movie }) {
       <img css={backdropCss} src={movie.backdrop} alt="" />
       <div css={shadeCss} />
       <div css={textCss}>
-        <h1 css={brandCss}>시네필을 위한 영화 전문 OTT. 아직 수입되지 않은 영화를 가장 먼저 만나세요.</h1>
+        <h1 css={brandCss}>{HOME_TITLE}</h1>
         {movie.firstImport && <p css={labelCss}>국내 첫 공개</p>}
         <h2 id="featured-title" css={titleCss}>
           {movie.title}
@@ -111,7 +113,7 @@ export function FeaturedMovie({ movie }: { movie: Movie }) {
           자세히 보기<span css={visuallyHidden}>: {movie.title}</span>
         </Link>
       </div>
-      <img css={posterCss} src={movie.poster} alt={`${movie.title} 포스터`} />
+      <MoviePoster css={posterCss} movie={movie} loading="eager" />
     </section>
   );
 }

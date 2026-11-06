@@ -1,11 +1,20 @@
 import { css } from '@emotion/react';
 import { Link, useParams } from 'react-router';
-import { AGE_LABELS, formatDate, formatRuntime, GenreLinks, useMovie, type Movie } from '@/entities/movie';
+import {
+  AGE_LABELS,
+  formatDate,
+  formatRuntime,
+  GenreLinks,
+  MoviePoster,
+  useMovie,
+  type Movie,
+} from '@/entities/movie';
 import { WatchlistButton } from '@/features/toggle-watchlist';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
 import { buttonCss } from '@/shared/ui/Button';
 import { PageMessage } from '@/shared/ui/PageMessage';
+import { skeletonCss, visuallyHidden } from '@/shared/ui/styles';
 import { RelatedMovies } from './RelatedMovies';
 import { WatchAction } from './WatchAction';
 
@@ -80,6 +89,11 @@ const metaCss = css`
 const synopsisCss = css`
   margin: 16px 0 24px;
   font-size: clamp(1rem, 1.4vw, 1.1875rem);
+`;
+const loadingLineCss = css`
+  height: 1em;
+  margin-top: 16px;
+  border-radius: 2px;
 `;
 const actionsCss = css`
   display: flex;
@@ -181,7 +195,22 @@ export function MovieDetailPage() {
   const { data: movie, isPending, isError } = useMovie(id);
   useDocumentTitle(movie?.title ?? (isPending ? undefined : '영화를 찾을 수 없습니다'));
 
-  if (isPending) return <output css={{ display: 'block', paddingTop: 32 }}>영화를 불러오는 중입니다.</output>;
+  if (isPending) {
+    return (
+      <>
+        <output css={visuallyHidden}>영화를 불러오는 중입니다.</output>
+        <div aria-hidden="true" css={heroCss} data-skeleton="detail">
+          <div css={[posterCss, skeletonCss]} />
+          <div css={textCss}>
+            <div css={[skeletonCss, loadingLineCss, { width: '60%', height: '3rem' }]} />
+            <div css={[skeletonCss, loadingLineCss, { width: '40%' }]} />
+            <div css={[skeletonCss, loadingLineCss]} />
+            <div css={[skeletonCss, loadingLineCss, { width: '85%' }]} />
+          </div>
+        </div>
+      </>
+    );
+  }
   if (isError) {
     return (
       <p role="alert" css={{ paddingTop: 32 }}>
@@ -204,7 +233,7 @@ export function MovieDetailPage() {
       <div css={heroCss}>
         <img css={backdropCss} src={movie.backdrop} alt="" />
         <div css={shadeCss} />
-        <img css={posterCss} src={movie.poster} alt={`${movie.title} 포스터`} />
+        <MoviePoster css={posterCss} movie={movie} loading="eager" />
         <div css={textCss}>
           {movie.firstImport && <p css={labelCss}>국내 첫 공개</p>}
           <h1 css={titleCss}>{movie.title}</h1>

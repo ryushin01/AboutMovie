@@ -5,6 +5,7 @@ import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
 import { PageMessage } from '@/shared/ui/PageMessage';
 import { MovieRow } from '@/widgets/movie-row';
 import { FeaturedMovie } from './FeaturedMovie';
+import { HomeSkeleton } from './HomeSkeleton';
 
 const remaining = ({ continueWatching }: MemberLibrary) =>
   Object.fromEntries(
@@ -21,7 +22,7 @@ export function HomePage() {
   const { user } = useSession();
   const { data: library } = useLibrary(user?.id);
 
-  if (isPending) return <output css={{ display: 'block', paddingTop: 32 }}>영화를 불러오는 중입니다.</output>;
+  if (isPending) return <HomeSkeleton />;
   if (isError) {
     return (
       <p role="alert" css={{ paddingTop: 32 }}>

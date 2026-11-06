@@ -32,3 +32,5 @@ export {
 } from './model/types';
 export { GenreLinks } from './ui/GenreLinks';
 export { MovieCard } from './ui/MovieCard';
+export { MovieCardSkeleton } from './ui/MovieCardSkeleton';
+export { MoviePoster } from './ui/MoviePoster';

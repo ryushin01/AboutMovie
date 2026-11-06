@@ -7,6 +7,7 @@ const styles = css`
     color-scheme: light;
     --bg: #f3f0e8;
     --surface: #e8e4d9;
+    --skeleton: #f6f3ec;
     --ink: #15130f;
     --muted: #57524a;
     --accent: #a82c0c;
@@ -16,6 +17,7 @@ const styles = css`
     color-scheme: dark;
     --bg: #0b0b0a;
     --surface: #1a1a18;
+    --skeleton: #2e2e2a;
     --ink: #f3f0e8;
     --muted: #aeaa9e;
     --accent: #ff6a3d;

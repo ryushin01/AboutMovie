@@ -370,6 +370,74 @@ test('회원 탈퇴를 확인하면 기록이 지워지고 로그아웃된다', 
   expect(state.subscription).toBeNull();
 });
 
+test('불러오는 동안 스켈레톤을 보여 주고 도착하면 없앤다', async ({ page }) => {
+  await installFakeApi(page);
+  const skeleton = page.locator('main [data-skeleton="card"]');
+  const hold = (pattern: string) => {
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return page
+      .route(pattern, async (route) => {
+        await gate;
+        await route.fallback();
+      })
+      .then(() => release);
+  };
+
+  let release = await hold('**/api/home');
+  await page.goto('/');
+  await expect(skeleton.first()).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('영화를 불러오는 중입니다.');
+  await expectNoHorizontalOverflow(page);
+  await expectNoAxeViolations(page);
+  release();
+  await expect(page.getByRole('region', { name: '국내 첫 공개' })).toBeVisible();
+  await expect(skeleton).toHaveCount(0);
+  await page.unroute('**/api/home');
+
+  release = await hold('**/api/movies/iron-harbor');
+  await page.goto('/movies/iron-harbor');
+  await expect(page.locator('main [data-skeleton="detail"]')).toBeVisible();
+  release();
+  await expect(page.getByRole('heading', { level: 1, name: '철의 항구' })).toBeVisible();
+  await expect(page.locator('main [data-skeleton="detail"]')).toHaveCount(0);
+  await page.unroute('**/api/movies/iron-harbor');
+
+  release = await hold('**/api/movies?*');
+  await page.goto('/movies?genre=SF');
+  await expect(skeleton.first()).toBeVisible();
+  await expectNoAxeViolations(page);
+  release();
+  await expect(page.getByRole('main').getByRole('status').first()).toContainText('영화');
+  await expect(skeleton).toHaveCount(0);
+});
+
+test('포스터 이미지가 도착할 때까지 스켈레톤을 그리고, 움직임 줄이기를 따른다 [컨텍스트]', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({ baseURL, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await installFakeApi(page);
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/seed/last-screening-poster.svg', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.goto('/movies/last-screening');
+  const poster = page.getByAltText('마지막 상영 포스터');
+  await expect(poster).toHaveAttribute('data-skeleton', 'poster');
+  await expect(poster).toHaveCSS('animation-name', 'none');
+  release();
+  await expect(poster).not.toHaveAttribute('data-skeleton');
+  await context.close();
+});
+
 test('플레이어를 키보드로 조작하고 자동으로 재생하지 않는다', async ({ page, browserName }) => {
   await installFakeApi(page, { user: MEMBER, plan: 'standard' });
   await page.goto('/watch/last-screening');
