@@ -14,12 +14,12 @@ import {
 
 export const useHome = () => useQuery({ queryKey: ['home'], queryFn: getHome });
 
-export const useMovies = (filters: MovieFilters) =>
+export const useMovies = (filters: MovieFilters, { keepPrevious = false } = {}) =>
   useQuery({
     queryKey: ['movies', filters],
     queryFn: () => searchMovies(filters),
-    // 조건을 바꾸는 동안 결과가 비어 화면이 튀지 않게 이전 결과를 둡니다.
-    placeholderData: keepPreviousData,
+    // 리스트에서 조건을 바꾸는 동안 결과가 비어 화면이 튀지 않게 합니다. 다른 작품의 결과를 보여 주면 안 되는 곳에서는 쓰지 않습니다.
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
   });
 
 export const useMovie = (id: string) => useQuery({ queryKey: ['movie', id], queryFn: () => getMovie(id) });
@@ -53,6 +53,8 @@ export function useToggleWatchlist() {
 export function useSaveProgress() {
   const client = useQueryClient();
   return useMutation({
+    // 주기 저장과 멈출 때의 저장이 겹치면 오래된 위치가 나중에 도착할 수 있어 순서대로 보냅니다.
+    scope: { id: 'save-progress' },
     mutationFn: ({ id, positionSeconds }: { id: string; positionSeconds: number }) =>
       saveProgress(id, positionSeconds),
     onSuccess: () => client.invalidateQueries({ queryKey: [LIBRARY] }),

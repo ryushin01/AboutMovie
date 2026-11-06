@@ -56,7 +56,7 @@ export function MovieListPage() {
   useDocumentTitle('영화 찾기');
   const [params, setParams] = useSearchParams();
   const filters = parseMovieFilters(params);
-  const { data, isPending, isError } = useMovies(filters);
+  const { data, isPending, isError } = useMovies(filters, { keepPrevious: true });
   const pageCount = data ? Math.ceil(data.total / data.pageSize) : 0;
 
   return (

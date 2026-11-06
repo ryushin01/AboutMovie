@@ -52,17 +52,16 @@ export async function removeFromWatchlist(db: Queryable, userId: string, movieId
   await db.query('DELETE FROM watchlist WHERE user_id = $1 AND movie_id = $2', [userId, movieId]);
 }
 
-const LIBRARY_LIMIT = 50;
-
+/** 회원과 작품의 조합이 기본 키라 작품 수를 넘지 않으므로 상한을 두지 않습니다. 디테일의 찜 상태도 이 목록으로 판단합니다. */
 export async function getLibrary(db: Queryable, userId: string): Promise<MemberLibrary> {
   const { rows: saved } = await db.query(
-    'SELECT movie_id FROM watchlist WHERE user_id = $1 ORDER BY created_at DESC, movie_id LIMIT $2',
-    [userId, LIBRARY_LIMIT],
+    'SELECT movie_id FROM watchlist WHERE user_id = $1 ORDER BY created_at DESC, movie_id',
+    [userId],
   );
   const { rows: progress } = await db.query(
     `SELECT movie_id, position_seconds FROM watch_progress
-     WHERE user_id = $1 ORDER BY updated_at DESC, movie_id LIMIT $2`,
-    [userId, LIBRARY_LIMIT],
+     WHERE user_id = $1 ORDER BY updated_at DESC, movie_id`,
+    [userId],
   );
   const savedIds = (saved as { movie_id: string }[]).map((row) => row.movie_id);
   const watching = progress as { movie_id: string; position_seconds: number }[];

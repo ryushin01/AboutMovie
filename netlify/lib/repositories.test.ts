@@ -295,6 +295,17 @@ describe('찜과 이어 보기', () => {
     expect((await getLibrary(client, USER)).continueWatching).toEqual([]);
   });
 
+  it('찜과 이어 보기를 자르지 않고 모두 돌려준다', async () => {
+    const { items } = await searchMovies(client, {}, NOW, 100);
+    for (const movie of items) {
+      await addToWatchlist(client, USER, movie.id);
+      await saveProgress(client, USER, movie.id, 10);
+    }
+    const library = await getLibrary(client, USER);
+    expect(library.watchlist).toHaveLength(items.length);
+    expect(library.continueWatching).toHaveLength(items.length);
+  });
+
   it('회원마다 따로 관리한다', async () => {
     await addToWatchlist(client, USER, 'paper-whale');
     await saveProgress(client, USER, 'paper-whale', 100);
