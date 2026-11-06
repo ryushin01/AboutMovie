@@ -200,6 +200,10 @@ test('메일 확인이 필요한 가입은 안내하고, 메일의 링크로 들
   ).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { level: 1, name: /시네필을 위한/ })).toBeVisible();
+  // 다른 회원이 아니라 가입한 사람으로 로그인됩니다.
+  expect(state.user).toMatchObject({ id: 'u-new', email: 'cinephile@example.com' });
+  await page.getByRole('link', { name: '내 계정' }).click();
+  await expect(page.getByText('새 시네필 · cinephile@example.com')).toBeVisible();
 });
 
 test('결제 실패를 안내하고 이용권을 시작하지 않는다', async ({ page }) => {

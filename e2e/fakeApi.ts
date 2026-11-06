@@ -286,7 +286,9 @@ export async function installFakeApi(
     return route.fulfill({ json: subscriptionData() });
   });
 
-  // Identity: 가입하면 바로 확인되는 사이트로 흉내 냅니다.
+  let pendingUser: FakeUser | null = null;
+
+  // Identity: 기본은 가입하면 바로 확인되는 사이트로 흉내 냅니다.
   await page.route('**/.netlify/identity/**', async (route) => {
     const url = new URL(route.request().url());
     const json = {
@@ -299,6 +301,7 @@ export async function installFakeApi(
     if (url.pathname.endsWith('/signup') || url.pathname.endsWith('/user')) {
       if (url.pathname.endsWith('/signup')) {
         if (requireEmailConfirmation) {
+          pendingUser = { id: json.id, email: json.email, name: '새 시네필' };
           const { confirmed_at: _confirmedAt, ...unconfirmed } = json;
           return route.fulfill({ json: unconfirmed });
         }
@@ -307,7 +310,8 @@ export async function installFakeApi(
       return route.fulfill({ json });
     }
     if (url.pathname.endsWith('/token') || url.pathname.endsWith('/verify')) {
-      state.user = state.user ?? MEMBER;
+      // 메일 링크로 들어오면 가입을 기다리던 사람이 로그인됩니다.
+      state.user = (url.pathname.endsWith('/verify') ? pendingUser : null) ?? state.user ?? MEMBER;
       const payload = Buffer.from(JSON.stringify({ exp: 4102444800, sub: json.id })).toString('base64url');
       return route.fulfill({
         json: {
