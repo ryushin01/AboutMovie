@@ -500,6 +500,8 @@ test('다크 모드를 저장하고 시스템 설정을 따른다', async ({ bro
 test('키보드로 본문 바로가기를 쓸 수 있다', async ({ page, browserName }) => {
   await installFakeApi(page);
   await page.goto('/');
+  // 화면이 그려지기 전에 Tab을 누르면 초점이 갈 곳이 없습니다.
+  await expect(page.getByRole('link', { name: '본문 바로가기' })).toBeAttached();
   await page.keyboard.press(tabKey(browserName));
   await expect(page.getByRole('link', { name: '본문 바로가기' })).toBeFocused();
   await page.keyboard.press('Enter');
