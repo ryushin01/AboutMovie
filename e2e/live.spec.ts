@@ -14,17 +14,17 @@ test('배포된 사이트를 메인, 리스트, 디테일 순서로 볼 수 있�
   page.on('pageerror', (error) => errors.push(error.message));
   // 2152398850은 Firefox의 NS_BINDING_ABORTED로, 페이지를 옮기며 받던 글꼴을 취소했다는 기록입니다.
   // Netlify가 넣는 Powered by Netlify 배지는 인라인 스크립트라 CSP에 막힙니다. 문구는 브라우저마다 다릅니다.
-  // 우리 코드의 인라인 스크립트는 같은 CSP를 적용한 app.spec.ts가 배지 없는 빌드에서 잡습니다.
-  const ignored = [
-    /downloadable font:.*status=2152398850/,
+  // 페이지를 한 번 열 때 한 건만 나므로, 두 건 이상이면 다른 스크립트도 막힌 것으로 봅니다.
+  const blockedInlineScript = [
     /Executing inline script violates .*script-src 'self'/,
     /blocked an inline script \(script-src-elem\).*about:srcdoc/,
     /Refused to execute a script because its hash, its nonce, or 'unsafe-inline'/,
   ];
+  let blockedInlineScripts = 0;
   page.on('console', (message) => {
-    if (message.type() === 'error' && !ignored.some((pattern) => pattern.test(message.text()))) {
-      errors.push(message.text());
-    }
+    if (message.type() !== 'error' || /downloadable font:.*status=2152398850/.test(message.text())) return;
+    if (blockedInlineScript.some((pattern) => pattern.test(message.text()))) blockedInlineScripts += 1;
+    else errors.push(message.text());
   });
   page.on('response', (response) => {
     if (response.status() >= 400 && /\/(assets|seed|api)\//.test(response.url())) {
@@ -55,6 +55,7 @@ test('배포된 사이트를 메인, 리스트, 디테일 순서로 볼 수 있�
   await expect(page.getByRole('link', { name: '로그인하고 보기' })).toBeVisible();
 
   expect(errors).toEqual([]);
+  expect(blockedInlineScripts).toBeLessThanOrEqual(1);
 });
 
 test('로그인하지 않으면 이용권과 재생을 거부한다', async ({ request }) => {

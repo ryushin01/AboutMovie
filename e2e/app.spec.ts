@@ -665,6 +665,11 @@ test('운영과 같은 CSP에서 주요 화면이 정책 위반 없이 동작한
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: '로그인' }).click();
   await expect(page.getByRole('heading', { level: 1, name: '로그인' })).toBeVisible();
+  await page.goto('/movies');
+  await expect(page.getByRole('heading', { level: 1, name: '영화 찾기' })).toBeVisible();
+  const movie = seedMovies()[0];
+  await page.goto(`/movies/${movie.id}`);
+  await expect(page.getByRole('heading', { level: 1, name: movie.title })).toBeVisible();
   expect(violations).toEqual([]);
 });
 
