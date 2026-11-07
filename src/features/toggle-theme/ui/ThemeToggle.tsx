@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/shared/ui/Button';
 
-const STORAGE_KEY = 'about-movie-theme';
+const STORAGE_KEY = 'only-movie-theme';
 
 export function ThemeToggle() {
   const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark');

@@ -9,28 +9,28 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ko_KR" />
-    <meta property="og:title" content="AboutMovie" />
+    <meta property="og:title" content="OnlyMovie" />
     <meta
       property="og:description"
       content="시네필을 위한 영화 전문 OTT. 아직 수입되지 않은 영화를 가장 먼저 만나는 곳"
     />
-    <meta property="og:url" content="https://about-movie-ryushin.netlify.app/" />
-    <meta property="og:image" content="https://about-movie-ryushin.netlify.app/og-image.jpg" />
+    <meta property="og:url" content="https://only-movie-ryushin.netlify.app/" />
+    <meta property="og:image" content="https://only-movie-ryushin.netlify.app/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="국내 첫 공개작 소개 아래로 가상 영화 포스터가 가로로 나열된 AboutMovie 메인 화면"
+      content="국내 첫 공개작 소개 아래로 가상 영화 포스터가 가로로 나열된 OnlyMovie 메인 화면"
     />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>AboutMovie</title>
+    <title>OnlyMovie</title>
     <script>
       // 첫 화면이 잘못된 테마로 깜빡이지 않도록 렌더링 전에 테마를 정합니다.
       (function () {
         var saved = null;
         try {
-          saved = localStorage.getItem('about-movie-theme');
+          saved = localStorage.getItem('only-movie-theme');
         } catch (e) {}
         var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';

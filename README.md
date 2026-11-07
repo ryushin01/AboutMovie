@@ -1,11 +1,11 @@
-# AboutMovie
+# OnlyMovie
 
-[![CI](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/AboutMovie/actions/workflows/ci.yml)
-[![version](https://img.shields.io/badge/version-3.1.0-a82c0c)](https://github.com/ryushin01/AboutMovie/releases/latest)
+[![CI](https://github.com/ryushin01/OnlyMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/OnlyMovie/actions/workflows/ci.yml)
+[![version](https://img.shields.io/badge/version-3.1.1-a82c0c)](https://github.com/ryushin01/OnlyMovie/releases/latest)
 
 시네필을 위한 영화 전문 OTT입니다. 시리즈도 예능도 없이 영화만 다루고, 국내에 수입되지 않은 영화를 누구보다 먼저 들여와 보여 줍니다.
 
-**[사이트 보기](https://about-movie-ryushin.netlify.app/)** · 작품은 가입 없이 둘러보고, 재생은 회원가입과 이용권으로 엽니다.
+**[사이트 보기](https://only-movie-ryushin.netlify.app/)** · 작품은 가입 없이 둘러보고, 재생은 회원가입과 이용권으로 엽니다.
 
 > **프로젝트 상태:** **포트폴리오 프로젝트**입니다. 실제 서비스가 아니며, 영화와 인물은 모두 가상 데이터입니다. 결제는 실제 돈이 오가지 않는 가상 결제이고, 재생 화면은 권한 확인까지 구현했을 뿐 실제 영상은 나오지 않습니다.
 
