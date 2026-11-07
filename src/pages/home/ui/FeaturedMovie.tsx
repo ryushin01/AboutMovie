@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
 import { AGE_LABELS, formatRuntime, MoviePoster, type Movie } from '@/entities/movie';
 import { routes } from '@/shared/config/routes';
 import { buttonCss } from '@/shared/ui/Button';
@@ -109,7 +109,7 @@ export function FeaturedMovie({ movie }: { movie: Movie }) {
           {formatRuntime(movie.runtimeMinutes)}
         </p>
         <p css={synopsisCss}>{movie.synopsis}</p>
-        <Link to={routes.movie(movie.id)} css={[buttonCss(), linkCss]}>
+        <Link {...routes.movie(movie.id)} css={[buttonCss(), linkCss]}>
           자세히 보기<span css={visuallyHidden}>: {movie.title}</span>
         </Link>
       </div>

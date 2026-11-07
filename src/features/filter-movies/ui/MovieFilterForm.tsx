@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
 import type { FormEvent } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
 import {
   AGE_LABELS,
   GENRES,
@@ -203,7 +203,7 @@ export function MovieFilterForm({ filters, onApply }: Props) {
       </details>
       <div css={actionsCss}>
         <Button type="submit">적용</Button>
-        <Link to={routes.movies()} css={buttonCss('outline')}>
+        <Link {...routes.movies()} css={buttonCss('outline')}>
           초기화
         </Link>
       </div>

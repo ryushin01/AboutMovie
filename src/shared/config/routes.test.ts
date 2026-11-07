@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { routes, safeNext } from './routes';
+import { nextSearch, paths, routes, safeNext } from './routes';
 
 it('safeNext는 사이트 안의 경로만 받는다', () => {
   expect(safeNext('/movies/a')).toBe('/movies/a');
@@ -9,7 +9,13 @@ it('safeNext는 사이트 안의 경로만 받는다', () => {
   expect(safeNext('/\\evil.example')).toBe('/');
 });
 
-it('movies는 조건을 주소에 담는다', () => {
-  expect(routes.movies()).toBe('/movies');
-  expect(routes.movies({ genre: 'SF' })).toBe('/movies?genre=SF');
+it('routes는 라우터에 넘길 경로와 조건을, paths는 돌아올 주소 문자열을 만든다', () => {
+  expect(routes.movies({ genre: 'SF' })).toEqual({ to: '/movies', search: { genre: 'SF' } });
+  expect(routes.login(paths.watch('a b'))).toEqual({ to: '/login', search: { next: '/watch/a%20b' } });
+  expect(paths.login('/plans')).toBe('/login?next=%2Fplans');
+});
+
+it('nextSearch는 문자열 next만 받는다', () => {
+  expect(nextSearch({ next: '/plans' })).toEqual({ next: '/plans' });
+  expect(nextSearch({ next: 3 })).toEqual({});
 });

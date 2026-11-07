@@ -69,3 +69,20 @@ export function toMovieQuery(filters: MovieFilters) {
   }
   return params.toString();
 }
+
+/** 링크의 search 값으로 넘길 때 씁니다. 주소와 같은 규칙으로 값이 있는 조건만 남깁니다. */
+export function toMovieSearch(filters: MovieFilters): Record<string, string> {
+  return Object.fromEntries(new URLSearchParams(toMovieQuery(filters)));
+}
+
+/**
+ * 라우터의 validateSearch로 씁니다. 주소의 값을 검증하고, 값이 없는 조건은 키째 뺍니다.
+ * undefined인 키를 남기면 라우터가 주소를 다시 만들 때 "undefined"라는 글자로 실립니다.
+ */
+export function movieSearch(search: Record<string, unknown>): MovieFilters {
+  const raw = Object.fromEntries(Object.entries(search).map(([key, value]) => [key, String(value)]));
+  const filters = parseMovieFilters(new URLSearchParams(raw));
+  return Object.fromEntries(
+    Object.entries(filters).filter(([, value]) => value !== undefined),
+  ) as MovieFilters;
+}

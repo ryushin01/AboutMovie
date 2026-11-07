@@ -1,24 +1,17 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Route, Routes } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { activeSubscription, installFakeApi } from '@/shared/lib/test/fakeApi';
 import { renderWithProviders } from '@/shared/lib/test/renderWithProviders';
 import { AccountPage } from './AccountPage';
 
 const view = () =>
-  renderWithProviders(
-    <Routes>
-      <Route path="/account" element={<AccountPage />} />
-      <Route path="/login" element={<p>로그인 화면</p>} />
-    </Routes>,
-    '/account',
-  );
+  renderWithProviders({ '/account': <AccountPage />, '/login': <p>로그인 화면</p> }, '/account');
 
 describe('AccountPage', () => {
   it('이용권이 없으면 이용권 보기로 안내한다', async () => {
     installFakeApi();
-    view();
+    await view();
     expect(await screen.findByRole('heading', { name: '이용 중인 이용권이 없습니다' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '이용권 보기' })).toHaveAttribute('href', '/plans');
     expect(screen.getByText('시네필 · member@example.com')).toBeInTheDocument();
@@ -35,7 +28,7 @@ describe('AccountPage', () => {
       createdAt: '2026-11-06T00:00:00.000Z',
     });
     vi.stubGlobal('confirm', () => true);
-    view();
+    await view();
 
     expect(await screen.findByRole('heading', { name: '스탠다드 이용권 이용 중' })).toBeInTheDocument();
     expect(screen.getByRole('table', { name: '가상 결제 내역' })).toBeInTheDocument();
@@ -47,7 +40,7 @@ describe('AccountPage', () => {
 
   it('로그인하지 않으면 로그인 화면으로 보낸다', async () => {
     installFakeApi({ user: null });
-    view();
+    await view();
     expect(await screen.findByText('로그인 화면')).toBeInTheDocument();
   });
 });

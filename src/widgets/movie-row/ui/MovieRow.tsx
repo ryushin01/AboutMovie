@@ -1,6 +1,7 @@
 import { css } from '@emotion/react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
+import type { routes } from '@/shared/config/routes';
 import { MovieCard, type Movie } from '@/entities/movie';
 import { visuallyHidden } from '@/shared/ui/styles';
 
@@ -107,7 +108,8 @@ interface Props {
   title: string;
   movies: Movie[];
   /** 전체 보기로 갈 리스트 주소 */
-  moreTo?: string;
+  /** 더 보기 링크. `routes.movies(조건)`을 넘깁니다. */
+  moreTo?: ReturnType<typeof routes.movies>;
   /** 작품별로 카드에 덧붙일 글 (남은 시간 등) */
   notes?: Record<string, string>;
 }
@@ -151,7 +153,7 @@ export function MovieRow({ title, movies, moreTo, notes }: Props) {
         </h2>
         <div css={toolsCss}>
           {moreTo && (
-            <Link to={moreTo} css={moreCss}>
+            <Link {...moreTo} css={moreCss}>
               <span css={visuallyHidden}>{title}</span> 전체 보기
             </Link>
           )}

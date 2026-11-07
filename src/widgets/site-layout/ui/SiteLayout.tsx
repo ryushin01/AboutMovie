@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
 import { useEffect, useRef } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { Link, Outlet, useLocation } from '@tanstack/react-router';
 import { useSession } from '@/entities/session';
 import { LogoutButton } from '@/features/logout';
 import { MovieSearch } from '@/features/search-movies';
@@ -88,33 +88,33 @@ export function SiteLayout() {
         본문 바로가기
       </a>
       <header css={headerCss}>
-        <Link to={routes.home} css={logoCss}>
+        <Link {...routes.home} activeOptions={{ exact: true }} css={logoCss}>
           OnlyMovie
         </Link>
         <MovieSearch />
         <nav aria-label="주요 메뉴" css={navCss}>
-          <NavLink to={routes.movies()} css={navLinkCss}>
+          <Link activeOptions={{ includeSearch: false }} {...routes.movies()} css={navLinkCss}>
             영화
-          </NavLink>
-          <NavLink to={routes.plans} css={navLinkCss}>
+          </Link>
+          <Link activeOptions={{ includeSearch: false }} {...routes.plans} css={navLinkCss}>
             이용권
-          </NavLink>
+          </Link>
           {/* 확인이 끝나기 전에는 회원에게 로그인 메뉴가 깜빡이지 않도록 둘 다 숨깁니다. */}
           {isPending ? null : user ? (
             <>
-              <NavLink to={routes.account} css={navLinkCss}>
+              <Link activeOptions={{ includeSearch: false }} {...routes.account} css={navLinkCss}>
                 내 계정
-              </NavLink>
+              </Link>
               <LogoutButton />
             </>
           ) : (
             <>
-              <NavLink to={routes.login()} css={navLinkCss}>
+              <Link activeOptions={{ includeSearch: false }} {...routes.login()} css={navLinkCss}>
                 로그인
-              </NavLink>
-              <NavLink to={routes.signup()} css={navLinkCss}>
+              </Link>
+              <Link activeOptions={{ includeSearch: false }} {...routes.signup()} css={navLinkCss}>
                 회원가입
-              </NavLink>
+              </Link>
             </>
           )}
           <ThemeToggle />

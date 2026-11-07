@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
 import { routes } from '@/shared/config/routes';
 import { formatDate, isReleased, type Movie } from '../model/types';
 import { MoviePoster } from './MoviePoster';
@@ -85,7 +85,7 @@ export function MovieCard({ movie, note }: { movie: Movie; note?: string }) {
         <MoviePoster movie={movie} />
       </div>
       <h3 css={titleCss}>
-        <Link to={routes.movie(movie.id)}>{movie.title}</Link>
+        <Link {...routes.movie(movie.id)}>{movie.title}</Link>
       </h3>
       <p css={metaCss}>
         {movie.year} · {movie.country}

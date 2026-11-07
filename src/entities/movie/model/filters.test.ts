@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseMovieFilters, toMovieQuery } from './filters';
+import { movieSearch, parseMovieFilters, toMovieQuery, toMovieSearch } from './filters';
 
 const parse = (query: string) => parseMovieFilters(new URLSearchParams(query));
 
@@ -40,4 +40,19 @@ describe('parseMovieFilters', () => {
 
 it('toMovieQuery는 값이 있는 조건만 담는다', () => {
   expect(toMovieQuery({ genre: 'SF', q: '', firstImport: false, page: 2 })).toBe('genre=SF&page=2');
+});
+
+describe('movieSearch', () => {
+  it('주소의 값을 검증하고 값이 없는 조건은 키째 뺀다', () => {
+    const filters = movieSearch({ genre: '액션', year: '2025', page: 'abc', sort: 'nope' });
+    expect(filters).toEqual({ genre: '액션', year: 2025 });
+    expect(Object.keys(filters)).toEqual(['genre', 'year']);
+  });
+
+  it('링크로 넘길 조건은 주소와 같은 규칙으로 문자열만 남긴다', () => {
+    expect(toMovieSearch({ genre: '액션', page: 2, firstImport: false })).toEqual({
+      genre: '액션',
+      page: '2',
+    });
+  });
 });

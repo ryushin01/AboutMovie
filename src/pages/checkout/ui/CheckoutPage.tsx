@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router';
+import { Link, Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { RequireAuth, useSession } from '@/entities/session';
 import {
   activePlan,
@@ -14,6 +14,8 @@ import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
 import { buttonCss } from '@/shared/ui/Button';
 import { PageMessage } from '@/shared/ui/PageMessage';
+
+const route = getRouteApi('/checkout/$plan');
 
 const titleCss = css`
   margin: 0;
@@ -32,7 +34,7 @@ function Checkout({ plan }: { plan: Plan }) {
   if (isPending)
     return <output css={{ display: 'block', paddingTop: 32 }}>이용권을 확인하는 중입니다.</output>;
   // 이미 이용 중이면 두 번 결제하지 않도록 관리 화면으로 보냅니다.
-  if (activePlan(data?.subscription)) return <Navigate to={routes.account} replace />;
+  if (activePlan(data?.subscription)) return <Navigate {...routes.account} replace />;
 
   return (
     <>
@@ -49,14 +51,14 @@ function Checkout({ plan }: { plan: Plan }) {
 }
 
 export function CheckoutPage() {
-  const { plan = '' } = useParams();
+  const { plan } = route.useParams();
   const valid = isPlanId(plan);
   useDocumentTitle(valid ? `${PLANS[plan].name} 이용권 결제` : '이용권을 찾을 수 없습니다');
 
   if (!valid) {
     return (
       <PageMessage title="이용권을 찾을 수 없습니다">
-        <Link to={routes.plans} css={buttonCss()}>
+        <Link {...routes.plans} css={buttonCss()}>
           이용권 보기
         </Link>
       </PageMessage>

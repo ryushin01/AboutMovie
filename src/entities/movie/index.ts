@@ -10,6 +10,8 @@ export {
 } from './api/queries';
 export {
   parseMovieFilters,
+  movieSearch,
+  toMovieSearch,
   PAGE_SIZE,
   RUNTIMES,
   SORTS,

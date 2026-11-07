@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
 import { useId, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { routes } from '@/shared/config/routes';
 import { Button } from '@/shared/ui/Button';
 import { inputCss, visuallyHidden } from '@/shared/ui/styles';

@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
 import { useSession } from '@/entities/session';
 import { activePlan, formatPrice, PLAN_IDS, PLANS, useSubscription } from '@/entities/subscription';
 import { routes } from '@/shared/config/routes';
@@ -73,15 +73,15 @@ export function PlansPage() {
                   <li>{plan.firstImports ? '국내 첫 공개작 포함 전체 영화' : '국내 첫 공개작을 뺀 영화'}</li>
                 </ul>
                 {current === id ? (
-                  <Link to={routes.account} css={buttonCss('outline')}>
+                  <Link {...routes.account} css={buttonCss('outline')}>
                     <span>이용 중인 {plan.name} 관리</span>
                   </Link>
                 ) : current ? (
-                  <Link to={routes.account} css={buttonCss('outline')}>
+                  <Link {...routes.account} css={buttonCss('outline')}>
                     {plan.name}(으)로 변경
                   </Link>
                 ) : (
-                  <Link to={routes.checkout(id)} css={buttonCss()}>
+                  <Link {...routes.checkout(id)} css={buttonCss()}>
                     {plan.name} 시작하기
                   </Link>
                 )}

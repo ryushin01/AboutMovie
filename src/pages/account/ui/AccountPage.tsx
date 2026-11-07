@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router';
+import { Link, Navigate } from '@tanstack/react-router';
 import { useLibrary } from '@/entities/movie';
 import { RequireAuth, useSession, type SessionUser } from '@/entities/session';
 import { activePlan, formatPrice, PLANS, useSubscription, type Payment } from '@/entities/subscription';
@@ -118,7 +118,7 @@ function Account({ user, onDeleted }: { user: SessionUser; onDeleted: () => void
             {plan && data.subscription ? (
               <SubscriptionManager subscription={data.subscription} />
             ) : (
-              <Link to={routes.plans} css={[buttonCss(), { marginTop: 12 }]}>
+              <Link {...routes.plans} css={[buttonCss(), { marginTop: 12 }]}>
                 이용권 보기
               </Link>
             )}
@@ -141,6 +141,6 @@ export function AccountPage() {
   const { user } = useSession();
   // 세션이 비기 전에 세우므로, 탈퇴한 사람이 로그인 화면으로 가는 순간이 생기지 않습니다.
   const [deleted, setDeleted] = useState(false);
-  if (deleted) return <Navigate to={routes.home} replace />;
+  if (deleted) return <Navigate {...routes.home} replace />;
   return <RequireAuth>{user && <Account user={user} onDeleted={() => setDeleted(true)} />}</RequireAuth>;
 }
