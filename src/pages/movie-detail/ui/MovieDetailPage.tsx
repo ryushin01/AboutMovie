@@ -193,9 +193,13 @@ function MovieInfo({ movie }: { movie: Movie }) {
 export function MovieDetailPage() {
   const { id = '' } = useParams();
   const { data: movie, isPending, isError } = useMovie(id);
+  // 다시 불러오기에 실패하면 이전 작품이 남아 있어도 본문은 오류를 보여 주므로 제목도 오류를 먼저 따릅니다.
   useDocumentTitle(
-    movie?.title ??
-      (isPending ? undefined : isError ? '영화를 불러오지 못했습니다' : '영화를 찾을 수 없습니다'),
+    isPending
+      ? undefined
+      : isError
+        ? '영화를 불러오지 못했습니다'
+        : (movie?.title ?? '영화를 찾을 수 없습니다'),
   );
 
   if (isPending) {
