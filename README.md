@@ -1,7 +1,7 @@
 # OnlyMovie
 
 [![CI](https://github.com/ryushin01/OnlyMovie/actions/workflows/ci.yml/badge.svg)](https://github.com/ryushin01/OnlyMovie/actions/workflows/ci.yml)
-[![version](https://img.shields.io/badge/version-3.1.1-a82c0c)](https://github.com/ryushin01/OnlyMovie/releases/latest)
+[![version](https://img.shields.io/badge/version-3.1.2-a82c0c)](https://github.com/ryushin01/OnlyMovie/releases/latest)
 
 시네필을 위한 영화 전문 OTT입니다. 시리즈도 예능도 없이 영화만 다루고, 국내에 수입되지 않은 영화를 누구보다 먼저 들여와 보여 줍니다.
 
@@ -95,7 +95,7 @@ public/seed/        가상 영화의 포스터와 배경
 scripts/            가상 영화 원고와 시드 생성
 src/
 ├─ app/             진입점, 라우터, 전역 스타일과 테마 색상
-├─ pages/           home, movie-list, movie-detail, watch, plans, checkout, account, login, signup, not-found
+├─ pages/           home, movie-list, movie-detail, watch, plans, checkout, account, login, signup, not-found, route-error
 ├─ widgets/         site-layout (머리글, 본문 바로가기, 바닥글), movie-row (가로 포스터 줄)
 ├─ features/        search-movies, filter-movies, toggle-watchlist, subscribe, manage-subscription, login, signup, logout, delete-account, toggle-theme
 ├─ entities/        movie (작품, 검색 조건, 찜과 이어 보기), subscription (이용권, 재생 권한), session (로그인 상태)

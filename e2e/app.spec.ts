@@ -500,6 +500,8 @@ test('다크 모드를 저장하고 시스템 설정을 따른다', async ({ bro
 test('키보드로 본문 바로가기를 쓸 수 있다', async ({ page, browserName }) => {
   await installFakeApi(page);
   await page.goto('/');
+  // 화면이 그려지기 전에 Tab을 누르면 초점이 갈 곳이 없습니다.
+  await expect(page.getByRole('link', { name: '본문 바로가기' })).toBeAttached();
   await page.keyboard.press(tabKey(browserName));
   await expect(page.getByRole('link', { name: '본문 바로가기' })).toBeFocused();
   await page.keyboard.press('Enter');
@@ -645,4 +647,41 @@ test('모든 컨트롤의 대각선 길이가 6mm 이상이다 [컨텍스트]', 
     expect(sizes.filter((size) => size.diagonal < MIN_DIAGONAL_PX)).toEqual([]);
   }
   await context.close();
+});
+
+test('운영과 같은 CSP에서 주요 화면이 정책 위반 없이 동작한다', async ({ page }) => {
+  const violations: string[] = [];
+  page.on('console', (message) => {
+    if (/content security policy|content-security-policy/i.test(message.text()))
+      violations.push(message.text());
+  });
+  await installFakeApi(page);
+  const response = await page.goto('/');
+  expect(response?.headers()['content-security-policy']).toContain("script-src 'self'");
+  await expect(page.locator('html')).toHaveAttribute('data-theme', /^(dark|light)$/);
+  await expect(page.getByRole('region', { name: '국내 첫 공개' })).toBeVisible();
+
+  await page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: '이용권' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: '로그인' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '로그인' })).toBeVisible();
+  expect(violations).toEqual([]);
+});
+
+test('화면을 그리다 오류가 나면 머리글을 유지한 채 안내하고 다른 화면으로 갈 수 있다', async ({ page }) => {
+  await installFakeApi(page);
+  // 응답 형식이 어긋나 화면이 그리는 도중에 실패하는 경우입니다.
+  await page.route('**/api/home', (route) =>
+    route.fulfill({ json: { featured: seedMovies()[0], rows: null } }),
+  );
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1, name: '화면을 표시하지 못했습니다' })).toBeVisible();
+  await expect(page).toHaveTitle('화면을 표시하지 못했습니다 | OnlyMovie');
+  await expect(page.getByRole('button', { name: '새로고침' })).toBeVisible();
+  await expectNoAxeViolations(page);
+
+  const nav = page.getByRole('navigation', { name: '주요 메뉴' });
+  await nav.getByRole('link', { name: '이용권' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '화면을 표시하지 못했습니다' })).toBeHidden();
+  await expect(page).toHaveURL(/\/plans$/);
 });

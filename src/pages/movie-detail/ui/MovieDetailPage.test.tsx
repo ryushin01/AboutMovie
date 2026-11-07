@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import { Route, Routes } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { activeSubscription, installFakeApi, sampleMovie } from '@/shared/lib/test/fakeApi';
@@ -14,6 +14,28 @@ const view = (path = '/movies/last-screening') =>
   );
 
 describe('MovieDetailPage', () => {
+  it('다시 불러오기에 실패하면 이전 작품이 남아 있어도 문서 제목이 오류를 따른다', async () => {
+    const { state } = installFakeApi();
+    const { queryClient } = view();
+    expect(await screen.findByRole('heading', { level: 1, name: '마지막 상영' })).toBeInTheDocument();
+    expect(document.title).toBe('마지막 상영 | OnlyMovie');
+
+    state.fail = () => true;
+    await act(() => queryClient.refetchQueries({ queryKey: ['movie', 'last-screening'] }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('영화를 불러오지 못했습니다');
+    expect(document.title).toBe('영화를 불러오지 못했습니다 | OnlyMovie');
+  });
+
+  it('불러오기에 실패하면 없는 영화라고 하지 않고 문서 제목도 같은 내용을 알린다', async () => {
+    const { state } = installFakeApi();
+    state.fail = () => true;
+    view();
+    expect(await screen.findByRole('alert', {}, { timeout: 3000 })).toHaveTextContent(
+      '영화를 불러오지 못했습니다',
+    );
+    expect(document.title).toBe('영화를 불러오지 못했습니다 | OnlyMovie');
+  });
+
   it('작품 정보를 보여 주고 사람과 연도는 리스트 필터로 잇는다', async () => {
     installFakeApi();
     view();

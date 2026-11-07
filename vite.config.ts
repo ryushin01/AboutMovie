@@ -1,7 +1,13 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import netlify from '@netlify/vite-plugin';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
+
+// 운영의 CSP를 프로덕션 빌드 E2E에도 그대로 적용해, 정책에 걸리는 코드를 배포 전에 잡습니다.
+const contentSecurityPolicy = /Content-Security-Policy = "(.+)"/.exec(
+  readFileSync('netlify.toml', 'utf8'),
+)![1];
 
 export default defineConfig({
   plugins: [
@@ -11,6 +17,7 @@ export default defineConfig({
     ...(process.env.VITEST || process.env.E2E ? [] : [netlify({ edgeFunctions: { enabled: false } })]),
   ],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  preview: { headers: { 'Content-Security-Policy': contentSecurityPolicy } },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/shared/lib/test/setup.ts'],

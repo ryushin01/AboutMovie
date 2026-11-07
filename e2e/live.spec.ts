@@ -66,11 +66,27 @@ test('로그인하지 않으면 이용권과 재생을 거부한다', async ({ r
 });
 
 test('보안 헤더를 보낸다', async ({ request }) => {
-  const { 'x-content-type-options': type, 'x-frame-options': frame } = (
-    await request.get(`${SITE}/`)
-  ).headers();
+  const {
+    'x-content-type-options': type,
+    'x-frame-options': frame,
+    'content-security-policy': csp,
+  } = (await request.get(`${SITE}/`)).headers();
   expect(type).toBe('nosniff');
   expect(frame).toBe('DENY');
+  expect(csp).toContain("script-src 'self'");
+});
+
+test('작품 정보만 CDN에 캐시하고 회원마다 다른 응답은 캐시하지 않는다', async ({ request }) => {
+  // Netlify는 캐시 지시 헤더를 응답에서 지우므로 결과인 Cache-Status로 확인합니다.
+  const cacheStatus = async (path: string) =>
+    (await request.get(`${SITE}${path}`)).headers()['cache-status'] ?? '';
+  // Netlify는 저장한 응답에 값 없는 `stored`를 붙이고, 저장하지 못하면 `stored=false`를 붙입니다.
+  expect(await cacheStatus('/api/home')).toMatch(/; (hit|.*stored(?!=false))/);
+  // 운영 계정을 만들지 않으므로 로그인한 응답은 볼 수 없습니다. /api/me는 비로그인도 200이라 성공 응답을 확인하고,
+  // 나머지는 401을 확인합니다. 캐시는 응답마다 직접 켜야 하므로 회원 함수에는 캐시 헤더를 붙이지 않습니다.
+  expect(await cacheStatus('/api/me')).not.toMatch(/hit|stored/);
+  expect(await cacheStatus('/api/library')).not.toMatch(/hit|stored/);
+  expect(await cacheStatus('/api/movies/last-screening/playback')).not.toMatch(/hit|stored/);
 });
 
 test('다른 사이트에서 온 탈퇴 요청을 거부한다', async ({ request }) => {
