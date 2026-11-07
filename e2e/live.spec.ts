@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
 test.skip(!process.env.LIVE, 'LIVE=1일 때만 실행합니다.');
 
 // 다른 주소를 검사하려면 LIVE_URL로 넘깁니다.
-const SITE = (process.env.LIVE_URL ?? 'https://about-movie-ryushin.netlify.app').replace(/\/$/, '');
+const SITE = (process.env.LIVE_URL ?? 'https://only-movie-ryushin.netlify.app').replace(/\/$/, '');
 
 test('배포된 사이트를 메인, 리스트, 디테일 순서로 볼 수 있다', async ({ page }) => {
   test.setTimeout(60_000);

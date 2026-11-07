@@ -89,7 +89,7 @@ export function SiteLayout() {
       </a>
       <header css={headerCss}>
         <Link to={routes.home} css={logoCss}>
-          AboutMovie
+          OnlyMovie
         </Link>
         <MovieSearch />
         <nav aria-label="주요 메뉴" css={navCss}>
@@ -125,8 +125,8 @@ export function SiteLayout() {
       </main>
       <footer css={footerCss}>
         <small>
-          AboutMovie · 포트폴리오 프로젝트입니다. 영화와 인물은 모두 가상이고, 결제는 실제로 이루어지지
-          않으며, 영상도 재생되지 않습니다.
+          OnlyMovie · 포트폴리오 프로젝트입니다. 영화와 인물은 모두 가상이고, 결제는 실제로 이루어지지 않으며,
+          영상도 재생되지 않습니다.
         </small>
       </footer>
     </>

@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LIVE_URL: https://about-movie-ryushin.netlify.app
+  LIVE_URL: https://only-movie-ryushin.netlify.app
 
 jobs:
   verify:

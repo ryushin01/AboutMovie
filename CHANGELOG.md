@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 3.1.1
+
+### 변경
+
+- 프로젝트 이름을 AboutMovie에서 OnlyMovie로 변경. 사이트 주소는 `only-movie-ryushin.netlify.app`, 저장소는 `ryushin01/OnlyMovie`
+- 테마 저장 키를 `only-movie-theme`로 변경. 이전에 고른 테마는 한 번 초기화됨
+
 ## 3.1.0
 
 ### 추가
