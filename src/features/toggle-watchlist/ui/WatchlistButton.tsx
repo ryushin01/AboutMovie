@@ -1,8 +1,8 @@
 import { css } from '@emotion/react';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
 import { useLibrary, useToggleWatchlist } from '@/entities/movie';
 import { useSession } from '@/entities/session';
-import { routes } from '@/shared/config/routes';
+import { paths, routes } from '@/shared/config/routes';
 import { Button, buttonCss } from '@/shared/ui/Button';
 
 /** 어두운 배경 이미지 위에 놓이므로 테마와 상관없이 흰색으로 그립니다. */
@@ -30,7 +30,7 @@ export function WatchlistButton({ movieId }: { movieId: string }) {
 
   if (!user) {
     return (
-      <Link to={routes.login(routes.movie(movieId))} css={[buttonCss('outline'), onImageCss]}>
+      <Link {...routes.login(paths.movie(movieId))} css={[buttonCss('outline'), onImageCss]}>
         찜하기
       </Link>
     );

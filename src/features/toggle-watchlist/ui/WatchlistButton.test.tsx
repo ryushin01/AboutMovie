@@ -8,7 +8,7 @@ import { WatchlistButton } from './WatchlistButton';
 describe('WatchlistButton', () => {
   it('누를 때마다 찜하고 빼며 눌림 상태를 알린다', async () => {
     const { state } = installFakeApi();
-    renderWithProviders(<WatchlistButton movieId="last-screening" />);
+    await renderWithProviders(<WatchlistButton movieId="last-screening" />);
     const button = await screen.findByRole('button', { name: '찜하기' });
     expect(button).toHaveAttribute('aria-pressed', 'false');
 
@@ -24,7 +24,7 @@ describe('WatchlistButton', () => {
 
   it('방문자는 돌아올 주소와 함께 로그인으로 보낸다', async () => {
     installFakeApi({ user: null });
-    renderWithProviders(<WatchlistButton movieId="last-screening" />);
+    await renderWithProviders(<WatchlistButton movieId="last-screening" />);
     expect(await screen.findByRole('link', { name: '찜하기' })).toHaveAttribute(
       'href',
       `/login?next=${encodeURIComponent('/movies/last-screening')}`,
@@ -34,7 +34,7 @@ describe('WatchlistButton', () => {
   it('실패하면 안내한다', async () => {
     const { state } = installFakeApi();
     state.fail = (method) => method === 'PUT';
-    renderWithProviders(<WatchlistButton movieId="last-screening" />);
+    await renderWithProviders(<WatchlistButton movieId="last-screening" />);
     await userEvent.click(await screen.findByRole('button', { name: '찜하기' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('바꾸지 못했습니다');
   });

@@ -25,7 +25,7 @@ describe('SignupForm', () => {
   it('바로 확인되는 가입은 완료를 알린다', async () => {
     const onDone = vi.fn();
     auth.signup.mockResolvedValue({ confirmedAt: '2026-11-06T00:00:00.000Z' });
-    renderWithProviders(<SignupForm onDone={onDone} />);
+    await renderWithProviders(<SignupForm onDone={onDone} />);
     await fill();
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     expect(auth.signup).toHaveBeenCalledWith('cinephile@example.com', 'password1', { full_name: '시네필' });
@@ -34,14 +34,14 @@ describe('SignupForm', () => {
   it('메일 확인이 필요하면 안내한다', async () => {
     const onDone = vi.fn();
     auth.signup.mockResolvedValue({});
-    renderWithProviders(<SignupForm onDone={onDone} />);
+    await renderWithProviders(<SignupForm onDone={onDone} />);
     await fill();
     expect(await screen.findByRole('status')).toHaveTextContent('cinephile@example.com로 확인 메일');
     expect(onDone).not.toHaveBeenCalled();
   });
 
   it('짧은 비밀번호는 요청 전에 막고 입력 칸과 오류를 연결한다', async () => {
-    renderWithProviders(<SignupForm onDone={() => {}} />);
+    await renderWithProviders(<SignupForm onDone={() => {}} />);
     await fill('short');
     expect(await screen.findByText('오류: 비밀번호를 8자 이상 입력해 주세요.')).toBeInTheDocument();
     const input = screen.getByLabelText('비밀번호 (필수)');
@@ -52,7 +52,7 @@ describe('SignupForm', () => {
 
   it('가입에 실패하면 안내하고 초점을 옮긴다', async () => {
     auth.signup.mockRejectedValue(new Error('duplicate'));
-    renderWithProviders(<SignupForm onDone={() => {}} />);
+    await renderWithProviders(<SignupForm onDone={() => {}} />);
     await fill();
     expect(await screen.findByRole('alert')).toHaveTextContent('가입하지 못했습니다');
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus());

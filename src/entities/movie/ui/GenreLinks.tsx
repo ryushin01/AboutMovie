@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
 import { routes } from '@/shared/config/routes';
 import type { Genre } from '../model/types';
 
@@ -33,7 +33,7 @@ export function GenreLinks({ genres, className }: { genres: readonly Genre[]; cl
     <ul css={listCss} className={className}>
       {genres.map((genre) => (
         <li key={genre}>
-          <Link to={routes.movies({ genre })} css={tagCss}>
+          <Link {...routes.movies({ genre })} css={tagCss}>
             {genre}
           </Link>
         </li>

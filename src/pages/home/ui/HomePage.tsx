@@ -51,7 +51,7 @@ export function HomePage() {
           key={row.title}
           title={row.title}
           movies={row.movies}
-          moreTo={`${routes.movies()}?${row.query}`}
+          moreTo={routes.movies(Object.fromEntries(new URLSearchParams(row.query)))}
         />
       ))}
     </>

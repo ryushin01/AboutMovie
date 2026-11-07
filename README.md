@@ -53,7 +53,7 @@
 
 | 구분 | 사용 기술 |
 |---|---|
-| 프레임워크 | React 19, Vite 8, TypeScript 7, React Router 8 |
+| 프레임워크 | React 19, Vite 8, TypeScript 7, TanStack Router |
 | 상태·데이터 | TanStack Query v5 |
 | 서버 | Netlify Functions, Netlify Database (PostgreSQL), Netlify Identity (회원) |
 | 스타일 | Emotion, Pretendard |

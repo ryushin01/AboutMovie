@@ -1,7 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { RouterProvider } from 'react-router';
+import { RouterProvider } from '@tanstack/react-router';
 import { createQueryClient } from '@/shared/api/queryClient';
 import { router } from './router';
 import { GlobalStyles } from './styles/GlobalStyles';

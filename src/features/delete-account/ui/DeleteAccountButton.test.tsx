@@ -18,7 +18,7 @@ describe('DeleteAccountButton', () => {
     const { state } = installFakeApi();
     vi.stubGlobal('confirm', () => false);
     const onDone = vi.fn();
-    renderWithProviders(<DeleteAccountButton onDone={onDone} />);
+    await renderWithProviders(<DeleteAccountButton onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: '회원 탈퇴' }));
     expect(deletes(state)).toHaveLength(0);
     expect(onDone).not.toHaveBeenCalled();
@@ -29,7 +29,7 @@ describe('DeleteAccountButton', () => {
     vi.stubGlobal('confirm', () => true);
     auth.logout.mockRejectedValue(new Error('이미 없는 계정'));
     const onDone = vi.fn();
-    renderWithProviders(<DeleteAccountButton onDone={onDone} />);
+    await renderWithProviders(<DeleteAccountButton onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: '회원 탈퇴' }));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     expect(deletes(state)).toHaveLength(1);
@@ -40,7 +40,7 @@ describe('DeleteAccountButton', () => {
     state.fail = (method) => method === 'DELETE';
     vi.stubGlobal('confirm', () => true);
     const onDone = vi.fn();
-    renderWithProviders(<DeleteAccountButton onDone={onDone} />);
+    await renderWithProviders(<DeleteAccountButton onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: '회원 탈퇴' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('탈퇴하지 못했습니다');
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus());

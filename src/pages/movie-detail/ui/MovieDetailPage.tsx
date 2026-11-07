@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import { Link, useParams } from 'react-router';
+import { Link, getRouteApi } from '@tanstack/react-router';
 import {
   AGE_LABELS,
   formatDate,
@@ -17,6 +17,8 @@ import { PageMessage } from '@/shared/ui/PageMessage';
 import { skeletonCss, visuallyHidden } from '@/shared/ui/styles';
 import { RelatedMovies } from './RelatedMovies';
 import { WatchAction } from './WatchAction';
+
+const route = getRouteApi('/movies/$id');
 
 const heroCss = css`
   position: relative;
@@ -149,7 +151,7 @@ function MovieInfo({ movie }: { movie: Movie }) {
       <dl css={infoCss}>
         <dt>감독</dt>
         <dd>
-          <Link to={routes.movies({ director: movie.director })}>{movie.director}</Link>
+          <Link {...routes.movies({ director: movie.director })}>{movie.director}</Link>
         </dd>
         <dt>각본</dt>
         <dd>{movie.writer}</dd>
@@ -158,15 +160,15 @@ function MovieInfo({ movie }: { movie: Movie }) {
           <ul css={peopleCss}>
             {movie.cast.map((actor) => (
               <li key={actor}>
-                <Link to={routes.movies({ actor })}>{actor}</Link>
+                <Link {...routes.movies({ actor })}>{actor}</Link>
               </li>
             ))}
           </ul>
         </dd>
         <dt>제작</dt>
         <dd>
-          <Link to={routes.movies({ year: String(movie.year) })}>{movie.year}년</Link>,{' '}
-          <Link to={routes.movies({ country: movie.country })}>{movie.country}</Link>
+          <Link {...routes.movies({ year: String(movie.year) })}>{movie.year}년</Link>,{' '}
+          <Link {...routes.movies({ country: movie.country })}>{movie.country}</Link>
         </dd>
         <dt>러닝타임</dt>
         <dd>
@@ -191,7 +193,7 @@ function MovieInfo({ movie }: { movie: Movie }) {
 
 /** 3단 구조의 마지막 단계 */
 export function MovieDetailPage() {
-  const { id = '' } = useParams();
+  const { id } = route.useParams();
   const { data: movie, isPending, isError } = useMovie(id);
   // 다시 불러오기에 실패하면 이전 작품이 남아 있어도 본문은 오류를 보여 주므로 제목도 오류를 먼저 따릅니다.
   useDocumentTitle(
@@ -228,7 +230,7 @@ export function MovieDetailPage() {
   if (!movie) {
     return (
       <PageMessage title="영화를 찾을 수 없습니다">
-        <Link to={routes.movies()} css={buttonCss()}>
+        <Link {...routes.movies()} css={buttonCss()}>
           영화 찾기로
         </Link>
       </PageMessage>

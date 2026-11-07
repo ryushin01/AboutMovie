@@ -26,7 +26,7 @@ describe('LoginForm', () => {
     const user = userEvent.setup();
     const onDone = vi.fn();
     auth.login.mockResolvedValue({});
-    renderWithProviders(<LoginForm onDone={onDone} />);
+    await renderWithProviders(<LoginForm onDone={onDone} />);
 
     await user.type(screen.getByLabelText('이메일 (필수)'), 'member@example.com');
     await user.type(screen.getByLabelText('비밀번호 (필수)'), 'secret');
@@ -39,7 +39,7 @@ describe('LoginForm', () => {
   it('실패하면 안내하고 초점을 옮긴다', async () => {
     const user = userEvent.setup();
     auth.login.mockRejectedValue(new Error('invalid'));
-    renderWithProviders(<LoginForm onDone={() => {}} />);
+    await renderWithProviders(<LoginForm onDone={() => {}} />);
 
     await user.type(screen.getByLabelText('이메일 (필수)'), 'member@example.com');
     await user.type(screen.getByLabelText('비밀번호 (필수)'), 'wrong');
@@ -52,7 +52,7 @@ describe('LoginForm', () => {
   it('비밀번호를 잊으면 재설정 메일을 요청한다', async () => {
     const user = userEvent.setup();
     auth.requestPasswordRecovery.mockResolvedValue(undefined);
-    renderWithProviders(<LoginForm onDone={() => {}} />);
+    await renderWithProviders(<LoginForm onDone={() => {}} />);
 
     await user.click(screen.getByRole('button', { name: '비밀번호 찾기' }));
     await user.type(screen.getByLabelText('이메일 (필수)'), 'member@example.com');
@@ -66,7 +66,7 @@ describe('LoginForm', () => {
     const onDone = vi.fn();
     window.location.hash = '#confirmation_token=abc';
     auth.handleAuthCallback.mockResolvedValue({ type: 'confirmation', user: {} });
-    renderWithProviders(<LoginForm onDone={onDone} />);
+    await renderWithProviders(<LoginForm onDone={onDone} />);
 
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
   });
@@ -76,7 +76,7 @@ describe('LoginForm', () => {
     window.location.hash = '#recovery_token=abc';
     auth.handleAuthCallback.mockResolvedValue({ type: 'recovery', user: {} });
     auth.updateUser.mockResolvedValue({});
-    renderWithProviders(<LoginForm onDone={() => {}} />);
+    await renderWithProviders(<LoginForm onDone={() => {}} />);
 
     await user.type(await screen.findByLabelText('새 비밀번호 (필수)'), 'newpass');
     await user.click(screen.getByRole('button', { name: '비밀번호 설정' }));

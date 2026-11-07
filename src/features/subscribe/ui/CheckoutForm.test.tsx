@@ -10,7 +10,7 @@ describe('CheckoutForm', () => {
   it('보낼 데이터를 그대로 넘기고 성공하면 완료를 알린다', async () => {
     const { state } = installFakeApi();
     const onDone = vi.fn();
-    renderWithProviders(<CheckoutForm plan={PLANS.standard} onDone={onDone} />);
+    await renderWithProviders(<CheckoutForm plan={PLANS.standard} onDone={onDone} />);
 
     await userEvent.click(screen.getByRole('button', { name: '10,900원 가상 결제' }));
 
@@ -25,7 +25,7 @@ describe('CheckoutForm', () => {
     const user = userEvent.setup();
     installFakeApi();
     const onDone = vi.fn();
-    renderWithProviders(<CheckoutForm plan={PLANS.basic} onDone={onDone} />);
+    await renderWithProviders(<CheckoutForm plan={PLANS.basic} onDone={onDone} />);
 
     await user.click(screen.getByRole('radio', { name: '결제 실패' }));
     await user.click(screen.getByRole('button', { name: '7,900원 가상 결제' }));
@@ -41,7 +41,7 @@ describe('CheckoutForm', () => {
     state.hold = new Promise((resolve) => {
       release = resolve;
     });
-    renderWithProviders(<CheckoutForm plan={PLANS.basic} onDone={() => {}} />);
+    await renderWithProviders(<CheckoutForm plan={PLANS.basic} onDone={() => {}} />);
     await userEvent.dblClick(screen.getByRole('button', { name: '7,900원 가상 결제' }));
     release();
     await waitFor(() => expect(state.calls.filter((call) => call.method === 'POST')).toHaveLength(1));
@@ -53,7 +53,7 @@ describe('CheckoutForm', () => {
     state.hold = new Promise((resolve) => {
       release = resolve;
     });
-    renderWithProviders(<CheckoutForm plan={PLANS.basic} onDone={() => {}} />);
+    await renderWithProviders(<CheckoutForm plan={PLANS.basic} onDone={() => {}} />);
 
     await userEvent.click(screen.getByRole('button', { name: '7,900원 가상 결제' }));
 

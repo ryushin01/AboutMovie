@@ -1,10 +1,10 @@
 import { css } from '@emotion/react';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
 import { formatClock, formatDate, isReleased, useLibrary, type Movie } from '@/entities/movie';
 import { useSession } from '@/entities/session';
 import { activePlan, useSubscription, watchBlock } from '@/entities/subscription';
-import { routes } from '@/shared/config/routes';
+import { paths, routes } from '@/shared/config/routes';
 import { buttonCss } from '@/shared/ui/Button';
 
 const linkCss = css`
@@ -40,14 +40,14 @@ export function WatchAction({ movie }: { movie: Movie }) {
 
   if (block === 'login_required') {
     return (
-      <Link to={routes.login(routes.movie(movie.id))} css={[buttonCss(), linkCss]}>
+      <Link {...routes.login(paths.movie(movie.id))} css={[buttonCss(), linkCss]}>
         로그인하고 보기
       </Link>
     );
   }
   if (block === 'plan_required') {
     return (
-      <Link to={routes.plans} css={[buttonCss(), linkCss]}>
+      <Link {...routes.plans} css={[buttonCss(), linkCss]}>
         이용권 구매하고 보기
       </Link>
     );
@@ -55,7 +55,7 @@ export function WatchAction({ movie }: { movie: Movie }) {
   if (block === 'upgrade_required') {
     return (
       <>
-        <Link to={routes.account} css={[buttonCss(), linkCss]}>
+        <Link {...routes.account} css={[buttonCss(), linkCss]}>
           이용권 올리고 보기
         </Link>
         <p css={noteCss}>국내 첫 공개작은 스탠다드 이상 이용권으로 볼 수 있습니다.</p>
@@ -64,7 +64,7 @@ export function WatchAction({ movie }: { movie: Movie }) {
   }
   const watching = library?.continueWatching.find((item) => item.movie.id === movie.id);
   return (
-    <Link to={routes.watch(movie.id)} css={[buttonCss(), linkCss]}>
+    <Link {...routes.watch(movie.id)} css={[buttonCss(), linkCss]}>
       {watching ? `이어 보기 (${formatClock(watching.positionSeconds)}부터)` : '재생'}
     </Link>
   );

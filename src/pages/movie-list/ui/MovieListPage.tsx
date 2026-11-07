@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
-import { Link, useSearchParams } from 'react-router';
-import { MovieCard, MovieCardSkeleton, parseMovieFilters, toMovieQuery, useMovies } from '@/entities/movie';
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import { MovieCard, MovieCardSkeleton, toMovieSearch, useMovies } from '@/entities/movie';
 import { MovieFilterForm } from '@/features/filter-movies';
 import { routes } from '@/shared/config/routes';
 import { useDocumentTitle } from '@/shared/lib/useDocumentTitle';
@@ -8,6 +8,7 @@ import { buttonCss } from '@/shared/ui/Button';
 import { visuallyHidden } from '@/shared/ui/styles';
 
 const SKELETON_CARDS = 12;
+const route = getRouteApi('/movies');
 
 const titleCss = css`
   margin: 0;
@@ -56,15 +57,21 @@ const pagesCss = css`
 /** 3단 구조의 두 번째 단계. 검색과 필터 상태는 주소에 있어 공유와 뒤로 가기가 그대로 동작합니다. */
 export function MovieListPage() {
   useDocumentTitle('영화 찾기');
-  const [params, setParams] = useSearchParams();
-  const filters = parseMovieFilters(params);
+  // 주소의 검색 조건은 라우터가 검증해서 넘깁니다.
+  const filters = route.useSearch();
+  const navigate = useNavigate();
   const { data, isPending, isError } = useMovies(filters, { keepPrevious: true });
   const pageCount = data ? Math.ceil(data.total / data.pageSize) : 0;
 
   return (
     <>
       <h1 css={titleCss}>영화 찾기</h1>
-      <MovieFilterForm filters={filters} onApply={(query) => setParams(new URLSearchParams(query))} />
+      <MovieFilterForm
+        filters={filters}
+        onApply={(query) =>
+          navigate({ to: '/movies', search: Object.fromEntries(new URLSearchParams(query)) })
+        }
+      />
       {isPending && (
         <>
           <output css={visuallyHidden}>영화를 불러오는 중입니다.</output>
@@ -91,7 +98,7 @@ export function MovieListPage() {
           {data.total === 0 ? (
             <>
               <p>조건에 맞는 영화가 없습니다. 조건을 줄여 보세요.</p>
-              <Link to={routes.movies()} css={buttonCss()}>
+              <Link {...routes.movies()} css={buttonCss()}>
                 전체 영화 보기
               </Link>
             </>
@@ -110,7 +117,7 @@ export function MovieListPage() {
                 {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
                   <li key={page}>
                     <Link
-                      to={`?${toMovieQuery({ ...filters, page })}`}
+                      {...routes.movies(toMovieSearch({ ...filters, page }))}
                       css={buttonCss('outline')}
                       aria-current={page === data.page ? 'page' : undefined}
                     >
