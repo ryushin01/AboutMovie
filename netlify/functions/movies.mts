@@ -1,6 +1,7 @@
 import { getDatabase } from '@netlify/database';
 import type { Config, Context } from '@netlify/functions';
 import { parseMovieFilters } from '../../src/entities/movie/model/filters';
+import { publicCatalogCache } from '../lib/cache';
 import { findMovie, searchMovies } from '../lib/movieRepository';
 
 export default async (req: Request, context: Context) => {
@@ -10,10 +11,12 @@ export default async (req: Request, context: Context) => {
 
   if (!id) {
     const filters = parseMovieFilters(new URL(req.url).searchParams);
-    return Response.json(await searchMovies(db, filters, new Date()));
+    return Response.json(await searchMovies(db, filters, new Date()), { headers: publicCatalogCache });
   }
   const movie = await findMovie(db, id);
-  return movie ? Response.json(movie) : Response.json({ error: 'not_found' }, { status: 404 });
+  return movie
+    ? Response.json(movie, { headers: publicCatalogCache })
+    : Response.json({ error: 'not_found' }, { status: 404 });
 };
 
 export const config: Config = { path: ['/api/movies', '/api/movies/:id'] };

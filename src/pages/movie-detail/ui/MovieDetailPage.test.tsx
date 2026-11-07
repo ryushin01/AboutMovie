@@ -14,6 +14,16 @@ const view = (path = '/movies/last-screening') =>
   );
 
 describe('MovieDetailPage', () => {
+  it('불러오기에 실패하면 없는 영화라고 하지 않고 문서 제목도 같은 내용을 알린다', async () => {
+    const { state } = installFakeApi();
+    state.fail = () => true;
+    view();
+    expect(await screen.findByRole('alert', {}, { timeout: 3000 })).toHaveTextContent(
+      '영화를 불러오지 못했습니다',
+    );
+    expect(document.title).toBe('영화를 불러오지 못했습니다 | OnlyMovie');
+  });
+
   it('작품 정보를 보여 주고 사람과 연도는 리스트 필터로 잇는다', async () => {
     installFakeApi();
     view();

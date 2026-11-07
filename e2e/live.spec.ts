@@ -66,11 +66,21 @@ test('로그인하지 않으면 이용권과 재생을 거부한다', async ({ r
 });
 
 test('보안 헤더를 보낸다', async ({ request }) => {
-  const { 'x-content-type-options': type, 'x-frame-options': frame } = (
-    await request.get(`${SITE}/`)
-  ).headers();
+  const {
+    'x-content-type-options': type,
+    'x-frame-options': frame,
+    'content-security-policy': csp,
+  } = (await request.get(`${SITE}/`)).headers();
   expect(type).toBe('nosniff');
   expect(frame).toBe('DENY');
+  expect(csp).toContain("script-src 'self'");
+});
+
+test('회원마다 다른 응답은 CDN에 캐시하지 않고 작품 정보만 캐시한다', async ({ request }) => {
+  const header = 'netlify-cdn-cache-control';
+  expect((await request.get(`${SITE}/api/home`)).headers()[header]).toContain('public');
+  expect((await request.get(`${SITE}/api/library`)).headers()[header]).toBeUndefined();
+  expect((await request.get(`${SITE}/api/movies/last-screening/playback`)).headers()[header]).toBeUndefined();
 });
 
 test('다른 사이트에서 온 탈퇴 요청을 거부한다', async ({ request }) => {

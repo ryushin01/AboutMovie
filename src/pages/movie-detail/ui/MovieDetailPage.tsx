@@ -193,7 +193,10 @@ function MovieInfo({ movie }: { movie: Movie }) {
 export function MovieDetailPage() {
   const { id = '' } = useParams();
   const { data: movie, isPending, isError } = useMovie(id);
-  useDocumentTitle(movie?.title ?? (isPending ? undefined : '영화를 찾을 수 없습니다'));
+  useDocumentTitle(
+    movie?.title ??
+      (isPending ? undefined : isError ? '영화를 불러오지 못했습니다' : '영화를 찾을 수 없습니다'),
+  );
 
   if (isPending) {
     return (
